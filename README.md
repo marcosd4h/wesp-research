@@ -1,8 +1,9 @@
-Windows Endpoint Security Platform (WESP) Research
+# Windows Endpoint Security Platform (WESP) Research
 
 This project is an ongoing exploration of the Windows Endpoint Security Platform (WESP, or ESP), introduced in Windows 11 Insider Preview builds (25H2, builds 10.0.29641 to 10.0.29667). WESP changes how Windows handles endpoint security by shifting away from traditional, synchronous minifilter round-trips toward in-kernel decision graphs and decoupled asynchronous telemetry.
 
 Using AI-assisted reverse engineering, the full platform stack has been analyzed and documented across user and kernel space:
+
 - `wesp.sys`: The core filesystem minifilter driver, executive callbacks, and in-kernel decision engine.
 - `espclient.dll`: The user-mode client library, export catalog, and BDD compilation pipeline.
 - `wesp_elam.sys`: The early-boot sensor and shared telemetry staging queue.
@@ -35,12 +36,12 @@ For complete architectural diagrams, callback listings, and wire protocol detail
 
 # Repository Layout
 
-| Directory / File | Contents |
-| --- | --- |
-| `docs/` | Comprehensive technical references for WESP kernel architecture and `esptool`. |
-| `esptool/` | Source code and Visual Studio solution for the C++20 research harness. |
-| `rules/` | Corpus of 118 declarative XML test rule documents used by `esptool`. |
-| `smoke/` | Automated PowerShell test runner (`Run-EsptoolSmoke.ps1`) covering 312 smoke test cases. |
+| Directory / File | Contents                                                                                 |
+| ---------------- | ---------------------------------------------------------------------------------------- |
+| `docs/`          | Comprehensive technical references for WESP kernel architecture and `esptool`.           |
+| `esptool/`       | Source code and Visual Studio solution for the C++20 research harness.                   |
+| `rules/`         | Corpus of 118 declarative XML test rule documents used by `esptool`.                     |
+| `smoke/`         | Automated PowerShell test runner (`Run-EsptoolSmoke.ps1`) covering 312 smoke test cases. |
 
 # Installation and Environment Setup
 
