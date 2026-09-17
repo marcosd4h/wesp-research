@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-filt-ne" altitude="411500"/>
+  <rules>
+    <rule name="proc-ne-zzz" event="ProcessCreate" eventType="1000"
+          lifetime="transient" action="1">
+      <filter type="10" comparand="2" property="1"
+              value="$nt:C:\Windows\System32\zzz_no_such.exe"/>
+    </rule>
+  </rules>
+</esptool>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-filt-ms" altitude="410000"/>
+  <rules>
+    <rule name="ms-name" event="MailslotCreate" eventType="6000"
+          lifetime="transient" action="1">
+      <filter type="15" comparand="3" property="1"
+              value="*esptool_gap*"/>
+    </rule>
+  </rules>
+</esptool>

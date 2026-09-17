@@ -1,0 +1,3 @@
+x64/
+esptool_tests/
+*.user

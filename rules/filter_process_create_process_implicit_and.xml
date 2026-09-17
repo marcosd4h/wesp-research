@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-filt-impand" altitude="411700"/>
+  <rules>
+    <rule name="proc-implicit-and" event="ProcessCreate" eventType="1000"
+          lifetime="transient" action="1">
+      <filter type="10" comparand="1" property="1"
+              value="$nt:C:\Windows\System32\cmd.exe"/>
+      <filter type="1" comparand="1" property="1" value="1"/>
+    </rule>
+  </rules>
+</esptool>

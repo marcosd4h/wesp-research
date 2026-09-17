@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx</Extensions>
+    </Filter>
+    <Filter Include="Source Files\cli">
+      <UniqueIdentifier>{11B2C3D4-0001-4000-9000-000000000001}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\esp">
+      <UniqueIdentifier>{11B2C3D4-0002-4000-9000-000000000002}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ipc">
+      <UniqueIdentifier>{11B2C3D4-0003-4000-9000-000000000003}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\model">
+      <UniqueIdentifier>{11B2C3D4-0004-4000-9000-000000000004}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ppl">
+      <UniqueIdentifier>{11B2C3D4-0005-4000-9000-000000000005}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\util">
+      <UniqueIdentifier>{11B2C3D4-0006-4000-9000-000000000006}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\process">
+      <UniqueIdentifier>{11B2C3D4-0007-4000-9000-000000000007}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\cli\Commands.cpp">
+      <Filter>Source Files\cli</Filter>
+    </ClCompile>
+    <ClCompile Include="src\cli\Options.cpp">
+      <Filter>Source Files\cli</Filter>
+    </ClCompile>
+    <ClCompile Include="src\esp\EspApi.cpp">
+      <Filter>Source Files\esp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\esp\EspExercise.cpp">
+      <Filter>Source Files\esp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\esp\EspFilterBuild.cpp">
+      <Filter>Source Files\esp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\esp\EspNotifyFormat.cpp">
+      <Filter>Source Files\esp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\esp\EspRuleInstall.cpp">
+      <Filter>Source Files\esp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\esp\EspSession.cpp">
+      <Filter>Source Files\esp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\esp\EspStatus.cpp">
+      <Filter>Source Files\esp</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ipc\PipeChannel.cpp">
+      <Filter>Source Files\ipc</Filter>
+    </ClCompile>
+    <ClCompile Include="src\model\RuleParser.cpp">
+      <Filter>Source Files\model</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ppl\ProtectedService.cpp">
+      <Filter>Source Files\ppl</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ppl\Protection.cpp">
+      <Filter>Source Files\ppl</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ppl\TokenAttribute.cpp">
+      <Filter>Source Files\ppl</Filter>
+    </ClCompile>
+    <ClCompile Include="src\process\SameImage.cpp">
+      <Filter>Source Files\process</Filter>
+    </ClCompile>
+    <ClCompile Include="src\util\Log.cpp">
+      <Filter>Source Files\util</Filter>
+    </ClCompile>
+    <ClCompile Include="src\util\StrHelpers.cpp">
+      <Filter>Source Files\util</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\cli\Commands.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\cli\Options.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\esp\EspApi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\esp\EspCall.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\esp\EspCatalog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\esp\EspCore.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\esp\EspEventIds.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\esp\EspExercise.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\esp\EspFilterAbi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\esp\EspFilterAttach.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\esp\EspIoConfigAbi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\esp\EspMemoryView.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\esp\EspNotifyAbi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\esp\EspNotifyDecode.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\esp\EspNotifyFormat.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\esp\EspRuleAbi.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\esp\EspSession.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\esp\EspStatus.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\esp\EspTypes.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\esp\PhntUser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\esp\EspExports.inc">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ipc\PipeChannel.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\model\RuleDocument.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\model\RuleParser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ppl\ProtectedService.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ppl\Protection.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ppl\TokenAttribute.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\process\SameImage.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\util\UniqueHandle.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\util\Log.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\util\StrHelpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

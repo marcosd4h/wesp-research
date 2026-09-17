@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-fs-3007" altitude="410000"/>
+  <rules>
+    <rule name="fs-queryopen" event="FsQueryOpenFile" eventType="3007"
+          lifetime="transient" action="1"/>
+  </rules>
+</esptool>

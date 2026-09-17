@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Labelled non-enforcement fixture. Not a working deny recipe.
+
+     Create-key (7000, class 26) and open-key (7001, class 28) return
+     dword_1803C6668 and dword_1803C667C. A matching create consuming those
+     tables is unproven. The shipped enforce-compat set excludes 7000-7014.
+     RegSetValueKey (7003) still fails EspCreateRule with 0x80070057 even when
+     the client gate is patched.
+
+     action="suppress" (selector 4) installs and does not block. Do not change
+     it to action="deny". The deny_ filename is historical. -->
+<esptool>
+  <client name="esptool-deny-reg" altitude="820310"/>
+  <rules>
+    <rule name="deny-reg-create-unsupported" event="RegCreateKey"
+          eventType="7000" lifetime="transient" action="suppress">
+      <filter type="8" comparand="1" operand="0" property="1"
+              propertyName="keyPath" op="contains" value="esptool_deny_reg"/>
+    </rule>
+  </rules>
+</esptool>

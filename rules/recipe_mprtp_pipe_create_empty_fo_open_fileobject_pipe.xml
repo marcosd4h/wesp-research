@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <!--
+    MpRtp 26080 WESP recipe for this espclient ABI.
+    Client name must be unique; do not reuse Defender's registered identity.
+    Altitude 328000 matches MpRtp. PipeCreate is empty-filter event 5000.
+    FoOpen uses FileObject numeric property 28 / size-class 3 / value 3 (Pipe).
+    The 26060 size-class 40 string call is omitted; this client rejects it.
+  -->
+  <client name="esptool-def-mprtp" altitude="328000"/>
+  <rules>
+    <rule name="pipe-create" event="PipeCreate" eventType="5000"
+          lifetime="transient" action="1"/>
+    <rule name="pipe-open" event="FoOpen" eventType="2001"
+          lifetime="transient" action="1">
+      <filter type="6" comparand="1" operand="0" property="28"
+              propertyName="fileObjectType" op="equals" value="3"/>
+    </rule>
+  </rules>
+</esptool>

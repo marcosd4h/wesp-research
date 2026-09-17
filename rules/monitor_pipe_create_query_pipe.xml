@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-mon-q-pipe" altitude="387200"/>
+  <rules>
+    <rule name="pipe-create-query" event="PipeCreate" eventType="5000"
+          lifetime="transient" action="0">
+      <query kind="pipe" properties="1"/>
+    </rule>
+  </rules>
+</esptool>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The leaf name is historical. This document installs the notify form
+     (action="suppress", selector 4): it drops the queued notification for the
+     event and does not deny the operation. ProcessCreate (event type 1000) has
+     no event modify kind, so the enforcing action is unavailable for it and a
+     deny action would be refused. -->
+<esptool>
+  <client name="esptool-persist" altitude="410000"/>
+  <rules>
+    <rule name="persist-create" event="ProcessCreate" eventType="1000"
+          lifetime="persistent" flags="0" action="suppress"/>
+  </rules>
+</esptool>

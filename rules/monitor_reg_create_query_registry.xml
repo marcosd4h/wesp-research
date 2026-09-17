@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-mon-q-reg" altitude="387000"/>
+  <rules>
+    <rule name="reg-create-query" event="RegCreateKey" eventType="7000"
+          lifetime="transient" action="0">
+      <query kind="registry" properties="1"/>
+    </rule>
+  </rules>
+</esptool>

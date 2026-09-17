@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-deny-fo" altitude="410000"/>
+  <rules>
+    <rule name="deny-focreate" event="FoCreate" eventType="2000"
+          lifetime="transient" action="deny">
+      <filter type="6" comparand="1" property="1"
+              value="$nt:C:\tools\esptool-gap\deny_create.txt"/>
+    </rule>
+  </rules>
+</esptool>

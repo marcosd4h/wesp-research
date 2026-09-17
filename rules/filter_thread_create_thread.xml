@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-filt-thr" altitude="410000"/>
+  <rules>
+    <rule name="thr-tid" event="ThreadCreate" eventType="1"
+          lifetime="transient" action="1">
+      <filter type="11" comparand="1" property="1"
+              value="0"/>
+    </rule>
+  </rules>
+</esptool>

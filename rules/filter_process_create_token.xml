@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-filt-tok" altitude="410000"/>
+  <rules>
+    <rule name="tok-int" event="ProcessCreate" eventType="1000"
+          lifetime="transient" action="1">
+      <filter type="12" comparand="1" property="3"
+              value="0"/>
+    </rule>
+  </rules>
+</esptool>

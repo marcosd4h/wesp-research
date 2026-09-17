@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-filt-regnt" altitude="410000"/>
+  <rules>
+    <rule name="reg-nt-probe" event="RegCreateKey" eventType="7000"
+          lifetime="transient" action="1">
+      <filter type="8" comparand="1" property="1"
+              value="\REGISTRY\MACHINE\SOFTWARE\esptool_gap_probe"/>
+    </rule>
+  </rules>
+</esptool>

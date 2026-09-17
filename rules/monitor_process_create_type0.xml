@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-mon-type0" altitude="388000"/>
+  <rules>
+    <rule name="process-create-type0" event="ProcessCreate" eventType="1000"
+          lifetime="transient" action="0">
+      <filter type="0"/>
+    </rule>
+  </rules>
+</esptool>

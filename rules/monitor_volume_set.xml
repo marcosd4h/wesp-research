@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Volume types 4000-4002. Empty filters.
+  Boot-load-driver 9000 is not in this batch: EspUpdateRules rejects the
+  whole set when 9000 is present (E_ACCESSDENIED / E_INVALIDARG).
+-->
+<esptool>
+  <client name="esptool-vol-boot" altitude="385000"/>
+  <rules>
+    <rule name="volume-4000" event="Volume4000" eventType="4000" lifetime="transient" action="0"/>
+    <rule name="volume-4001" event="Volume4001" eventType="4001" lifetime="transient" action="0"/>
+    <rule name="volume-4002" event="Volume4002" eventType="4002" lifetime="transient" action="0"/>
+  </rules>
+</esptool>

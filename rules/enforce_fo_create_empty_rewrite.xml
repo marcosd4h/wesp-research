@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-rewrite" altitude="410000"/>
+  <rules>
+    <rule name="rewrite-focreate" event="FoCreate" eventType="2000"
+          lifetime="transient" action="5"/>
+  </rules>
+</esptool>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-mon-q-file" altitude="386800"/>
+  <rules>
+    <rule name="fo-create-query-file" event="FoCreate" eventType="2000"
+          lifetime="transient" action="0">
+      <query kind="file" properties="17"/>
+    </rule>
+  </rules>
+</esptool>

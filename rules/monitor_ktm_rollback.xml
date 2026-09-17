@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-ktm-3011" altitude="410000"/>
+  <rules>
+    <rule name="ktm-rollback" event="KtmRollback" eventType="3011"
+          lifetime="transient" action="1"/>
+  </rules>
+</esptool>

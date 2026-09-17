@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-fix-coll-open" altitude="1000"/>
+  <collections>
+    <collection name="reopen" open="true"/>
+  </collections>
+  <rules>
+    <rule name="dummy" event="ProcessCreate" eventType="1000"
+          lifetime="transient" action="1"/>
+  </rules>
+</esptool>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-leftover-fam" altitude="385000"/>
+  <rules>
+    <rule name="fo-open" event="FoOpen" eventType="2001"
+          lifetime="transient" action="1"/>
+    <rule name="fs-setea" event="FsSetEa" eventType="3006"
+          lifetime="transient" action="1"/>
+    <rule name="pipe-create" event="PipeCreate" eventType="5000"
+          lifetime="transient" action="0">
+      <query kind="pipe" properties="1"/>
+    </rule>
+  </rules>
+</esptool>

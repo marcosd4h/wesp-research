@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-filt-ads" altitude="410000"/>
+  <rules>
+    <rule name="ads-name" event="FoCreate" eventType="2000"
+          lifetime="transient" action="1">
+      <filter type="7" comparand="3" property="1"
+              value="*"/>
+    </rule>
+  </rules>
+</esptool>

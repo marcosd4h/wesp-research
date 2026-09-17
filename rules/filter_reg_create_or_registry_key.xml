@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-filt-regor" altitude="385000"/>
+  <rules>
+    <rule name="reg-or-probe-keys" event="RegCreateKey" eventType="7000"
+          lifetime="transient" action="1">
+      <or>
+        <filter type="8" comparand="1" operand="0" property="1"
+                propertyName="keyPath" op="contains" value="esptool_filter_probe"/>
+        <filter type="8" comparand="1" operand="0" property="1"
+                propertyName="keyPath" op="contains" value="esptool_monitor_probe"/>
+      </or>
+    </rule>
+  </rules>
+</esptool>

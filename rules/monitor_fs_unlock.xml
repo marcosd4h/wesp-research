@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-fs-3009" altitude="410000"/>
+  <rules>
+    <rule name="fs-unlock" event="FsUnlock" eventType="3009"
+          lifetime="transient" action="1"/>
+  </rules>
+</esptool>

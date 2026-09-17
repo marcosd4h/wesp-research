@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ProcessCreate (event type 1000) is driver-enforceable: its capability
+     record carries the enforce-capable bit 0x02, and the process-creation
+     notify routine consumes the engine decision and writes
+     PS_CREATE_NOTIFY_INFO.CreationStatus. The fixed espclient.dll client
+     refuses the enforcing descriptor for 1000, so this rule requires the
+     esptool enforce-compat opt-in, which patches EventModify::from_ffi in
+     memory for the current process:
+
+       esptool rules -rules deny_process_create.xml -enforce-compat
+
+     Without enforce-compat the rule is refused with a named diagnostic
+     instead of installing a non-enforcing rule. -->
+<esptool>
+  <client name="esptool-deny-proc" altitude="820330"/>
+  <rules>
+    <rule name="deny-process-create" event="ProcessCreate" eventType="1000"
+          lifetime="transient" action="deny">
+      <filter type="10" comparand="1" property="1"
+              value="$nt:C:\tools\esptool-deny\proc_target.exe"/>
+    </rule>
+  </rules>
+</esptool>

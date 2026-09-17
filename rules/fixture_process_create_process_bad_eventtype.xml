@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-filter-bad" altitude="385000"/>
+  <rules>
+    <rule name="bad-event" event="ProcessCreate" eventType="not-a-number"
+          lifetime="transient" action="1">
+      <filter type="10" comparand="1" property="2"/>
+    </rule>
+  </rules>
+</esptool>

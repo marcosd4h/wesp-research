@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{9E2F4C18-6A70-4B3D-8E11-5D9A0C7B2F44}</ProjectGuid>
+    <RootNamespace>esptool_tests</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <PropertyGroup>
+    <!-- Unified build layout: binaries under build\bin\<Config>, intermediate
+         files under build\obj\<Project>\<Config>. -->
+    <OutDir>$(SolutionDir)build\bin\$(Configuration)\</OutDir>
+    <IntDir>$(SolutionDir)build\obj\$(ProjectName)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Label="UserMacros" />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <WarningLevel>Level4</WarningLevel>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <PreprocessorDefinitions>WIN32_LEAN_AND_MEAN;NOMINMAX;UNICODE;_UNICODE;DOCTEST_CONFIG_USE_STD_HEADERS;ESPTOOL_RULES_DIR=R"($(ProjectDir)..\rules)";%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(ProjectDir)..\src;$(ProjectDir)..\third_party\doctest;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <ExternalWarningLevel>TurnOffAllWarnings</ExternalWarningLevel>
+      <AdditionalOptions>/external:I "$(ProjectDir)..\third_party\doctest" /Zc:__cplusplus /utf-8 %(AdditionalOptions)</AdditionalOptions>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <SDLCheck>true</SDLCheck>
+      <ControlFlowGuard>Guard</ControlFlowGuard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>xmllite.lib;shlwapi.lib;ole32.lib;advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
+    <ClCompile>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="CatalogTest.cpp" />
+    <ClCompile Include="EspNtPathTest.cpp" />
+    <ClCompile Include="EspStatusTest.cpp" />
+    <ClCompile Include="EventIdsCoverageTest.cpp" />
+    <ClCompile Include="FilterAttachTest.cpp" />
+    <ClCompile Include="LogTest.cpp" />
+    <ClCompile Include="MemoryViewTest.cpp" />
+    <ClCompile Include="NotifyDecodeTest.cpp" />
+    <ClCompile Include="NotifyFormatTest.cpp" />
+    <ClCompile Include="OptionsTest.cpp" />
+    <ClCompile Include="RefAbiTest.cpp" />
+    <ClCompile Include="RuleParserTest.cpp" />
+    <ClCompile Include="StrHelpersTest.cpp" />
+    <ClCompile Include="UniqueCloserTest.cpp" />
+    <ClCompile Include="PipeEncodeTest.cpp" />
+    <ClCompile Include="EspApiCatalogTest.cpp" />
+    <ClCompile Include="EspEnforceCompatTest.cpp" />
+    <ClCompile Include="TokenBlobTest.cpp" />
+    <ClCompile Include="ProtectionStateTest.cpp" />
+    <ClCompile Include="RuleAbiTest.cpp" />
+    <ClCompile Include="FilterAbiCoverageTest.cpp" />
+    <ClCompile Include="IoEventConfigAbiTest.cpp" />
+    <ClCompile Include="SameImageTest.cpp" />
+    <ClCompile Include="EspExerciseHostTest.cpp" />
+    <ClCompile Include="EspSessionFailClosedTest.cpp" />
+    <ClCompile Include="UniqueWinScmTest.cpp" />
+    <ClCompile Include="ProtectedServiceFailClosedTest.cpp" />
+    <ClCompile Include="..\src\cli\Options.cpp" />
+    <ClCompile Include="..\src\esp\EspApi.cpp" />
+    <ClCompile Include="..\src\esp\EspEnforceCompat.cpp" />
+    <ClCompile Include="..\src\esp\EspExercise.cpp" />
+    <ClCompile Include="..\src\esp\EspFilterBuild.cpp" />
+    <ClCompile Include="..\src\esp\EspNotifyFormat.cpp" />
+    <ClCompile Include="..\src\esp\EspNtPath.cpp" />
+    <ClCompile Include="..\src\esp\EspRefs.cpp" />
+    <ClCompile Include="..\src\esp\EspRuleInstall.cpp" />
+    <ClCompile Include="..\src\esp\EspSession.cpp" />
+    <ClCompile Include="..\src\esp\EspStatus.cpp" />
+    <ClCompile Include="..\src\ipc\PipeChannel.cpp" />
+    <ClCompile Include="..\src\model\RuleParser.cpp" />
+    <ClCompile Include="..\src\ppl\ProtectedService.cpp" />
+    <ClCompile Include="..\src\ppl\Protection.cpp" />
+    <ClCompile Include="..\src\ppl\TokenAttribute.cpp" />
+    <ClCompile Include="..\src\process\SameImage.cpp" />
+    <ClCompile Include="..\src\util\Log.cpp" />
+    <ClCompile Include="..\src\util\StrHelpers.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="TestSupport.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+</Project>

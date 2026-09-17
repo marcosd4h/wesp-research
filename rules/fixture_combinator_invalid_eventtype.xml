@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sample esptool rule document.
+
+  The numeric fields are authoritative. The symbolic attributes (event,
+  propertyName, op, value) are labels carried into logs and reports. See
+  README.md for the schema reference.
+-->
+<esptool>
+  <client name="esptool-demo" altitude="385000"/>
+
+  <rules>
+    <rule name="file-write-under-temp" event="FileWrite" eventType="12"
+          lifetime="transient" flags="0" action="0">
+      <and>
+        <filter type="5" comparand="1" operand="0" property="3"
+                propertyName="path" op="contains" value="C:\temp"/>
+        <filter type="10" comparand="1" operand="0" property="1"
+                propertyName="processId" op="equals" value="1234"/>
+      </and>
+    </rule>
+
+    <rule name="registry-set-value-except-safe" event="RegSetValueKey" eventType="30"
+          lifetime="transient">
+      <not>
+        <filter type="9" comparand="1" operand="0" property="1"
+                propertyName="keyPath" op="equals"
+                value="\Registry\Machine\Software\Safe"/>
+      </not>
+    </rule>
+
+    <rule name="process-create-or-load-image" event="ProcessCreate" eventType="1"
+          lifetime="transient">
+      <or>
+        <filter type="10" comparand="1" operand="0" property="2"
+                propertyName="imageName" op="equals" value="notepad.exe"/>
+        <filter type="10" comparand="1" operand="0" property="3"
+                propertyName="commandLine" op="contains" value="powershell"/>
+      </or>
+    </rule>
+  </rules>
+</esptool>

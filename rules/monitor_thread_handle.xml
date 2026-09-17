@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Thread types 1-3. Handle types 8000 and 8001.
+-->
+<esptool>
+  <client name="esptool-th" altitude="385000"/>
+  <rules>
+    <rule name="thread-create" event="ThreadCreate" eventType="1"
+          lifetime="transient" action="0"/>
+    <rule name="thread-start" event="ThreadStart" eventType="2"
+          lifetime="transient" action="0"/>
+    <rule name="thread-terminate" event="ThreadTerminate" eventType="3"
+          lifetime="transient" action="0"/>
+    <rule name="ob-create-handle" event="ObCreateHandle" eventType="8000"
+          lifetime="transient" action="0"/>
+    <rule name="ob-duplicate-handle" event="ObDuplicateHandle" eventType="8001"
+          lifetime="transient" action="0"/>
+  </rules>
+</esptool>

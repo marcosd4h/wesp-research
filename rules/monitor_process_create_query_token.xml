@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-mon-q-token" altitude="386500"/>
+  <rules>
+    <rule name="process-create-query-token" event="ProcessCreate" eventType="1000"
+          lifetime="transient" action="0">
+      <query kind="token" properties="3"/>
+    </rule>
+  </rules>
+</esptool>

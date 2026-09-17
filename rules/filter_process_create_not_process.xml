@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-filt-procnot" altitude="385000"/>
+  <rules>
+    <rule name="proc-not-csrss" event="ProcessCreate" eventType="1000"
+          lifetime="transient" action="1">
+      <not>
+        <filter type="10" comparand="1" operand="0" property="1"
+                propertyName="imageName" op="equals" value="csrss.exe"/>
+      </not>
+    </rule>
+  </rules>
+</esptool>

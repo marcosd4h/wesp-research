@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-1001" altitude="410000"/>
+  <rules>
+    <rule name="process-terminate" event="ProcessTerminate" eventType="1001"
+          lifetime="transient" action="1"/>
+  </rules>
+</esptool>

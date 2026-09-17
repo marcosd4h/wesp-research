@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-mon-q-ktm" altitude="386300"/>
+  <rules>
+    <rule name="ktm-commit-query" event="KtmCommit" eventType="3010"
+          lifetime="transient" action="0">
+      <query kind="ktm" properties="1"/>
+    </rule>
+  </rules>
+</esptool>

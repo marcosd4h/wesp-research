@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Filesystem and KTM event types 3000-3011. Empty filters.
+-->
+<esptool>
+  <client name="esptool-fs-ktm" altitude="385000"/>
+  <rules>
+    <rule name="fs-3000" event="Fs3000" eventType="3000" lifetime="transient" action="0"/>
+    <rule name="fs-3001" event="Fs3001" eventType="3001" lifetime="transient" action="0"/>
+    <rule name="fs-3002" event="Fs3002" eventType="3002" lifetime="transient" action="0"/>
+    <rule name="fs-3003" event="Fs3003" eventType="3003" lifetime="transient" action="0"/>
+    <rule name="fs-3004" event="Fs3004" eventType="3004" lifetime="transient" action="0"/>
+    <rule name="fs-3005" event="Fs3005" eventType="3005" lifetime="transient" action="0"/>
+    <rule name="fs-3006" event="Fs3006" eventType="3006" lifetime="transient" action="0"/>
+    <rule name="fs-3007" event="Fs3007" eventType="3007" lifetime="transient" action="0"/>
+    <rule name="fs-3008" event="Fs3008" eventType="3008" lifetime="transient" action="0"/>
+    <rule name="fs-3009" event="Fs3009" eventType="3009" lifetime="transient" action="0"/>
+    <rule name="fs-3010" event="Fs3010" eventType="3010" lifetime="transient" action="0"/>
+    <rule name="fs-3011" event="Fs3011" eventType="3011" lifetime="transient" action="0"/>
+  </rules>
+</esptool>

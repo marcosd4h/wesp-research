@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Predicate-filter rules. type is the CreateLeafFilter constructor index
+  (10=Process, 8=RegistryKey). property is the object property id.
+  Process property 1 and registry properties 1 and 2 use
+  StringComparison. value= is the UTF-16 comparand.
+-->
+<esptool>
+  <client name="esptool-filt" altitude="385000"/>
+  <rules>
+    <rule name="proc-image-contains-cmd" event="ProcessCreate" eventType="1000"
+          lifetime="transient" action="1">
+      <filter type="10" comparand="1" operand="0" property="1"
+              propertyName="imageName" op="contains" value="cmd.exe"/>
+    </rule>
+
+    <rule name="reg-or-probe-keys" event="RegCreateKey" eventType="7000"
+          lifetime="transient" action="1">
+      <or>
+        <filter type="8" comparand="1" operand="0" property="1"
+                propertyName="keyPath" op="contains" value="esptool_filter_probe"/>
+        <filter type="8" comparand="1" operand="0" property="1"
+                propertyName="keyPath" op="contains" value="esptool_monitor_probe"/>
+      </or>
+    </rule>
+
+    <rule name="proc-not-csrss" event="ProcessCreate" eventType="1000"
+          lifetime="transient" action="1">
+      <not>
+        <filter type="10" comparand="1" operand="0" property="1"
+                propertyName="imageName" op="equals" value="csrss.exe"/>
+      </not>
+    </rule>
+  </rules>
+</esptool>

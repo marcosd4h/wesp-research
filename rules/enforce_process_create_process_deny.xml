@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The leaf name is historical. ProcessCreate (event type 1000) has no event
+     modify kind, so the enforcing action is unavailable: a deny action is
+     refused with "event type 1000 has no event modify kind; the enforcing action
+     is unavailable for this event type". This document installs the notify form
+     (action="suppress", selector 4), which drops the queued notification and
+     does not deny the operation. Measured live on build 10.0.29641: the child
+     process starts normally. -->
+<esptool>
+  <client name="esptool-deny" altitude="410000"/>
+  <rules>
+    <rule name="suppress-process-create" event="ProcessCreate" eventType="1000"
+          lifetime="transient" action="suppress">
+      <filter type="10" comparand="1" property="1"
+              value="$nt:C:\tools\esptool_deny_probe.exe"/>
+    </rule>
+  </rules>
+</esptool>

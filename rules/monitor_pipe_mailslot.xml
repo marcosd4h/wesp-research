@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-ipcobj" altitude="385000"/>
+  <rules>
+    <rule name="pipe-create" event="PipeCreate" eventType="5000"
+          lifetime="transient" action="0"/>
+    <rule name="mailslot-create" event="MailslotCreate" eventType="6000"
+          lifetime="transient" action="0"/>
+  </rules>
+</esptool>

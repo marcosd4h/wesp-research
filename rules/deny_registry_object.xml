@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- ObCreateHandle (8000) and ObDuplicateHandle (8001) cannot be enforced.
+     On 10.0.29641 the capability mask is 0x19 (bit 0x02 clear). The client
+     may accept a descriptor; the driver rejects the batch. action="deny"
+     is refused by esptool before install. -->
+<esptool>
+  <client name="esptool-deny-regob" altitude="820320"/>
+  <rules>
+    <rule name="deny-reg-ob" event="ObCreateHandle" eventType="8000"
+          lifetime="transient" action="deny">
+      <filter type="2" comparand="3" property="1" value="*esptool_deny_reg*"/>
+    </rule>
+  </rules>
+</esptool>

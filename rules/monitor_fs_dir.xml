@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-fs-3004" altitude="410000"/>
+  <rules>
+    <rule name="fs-dir" event="FsQueryDirectoryInformation" eventType="3004"
+          lifetime="transient" action="1"/>
+  </rules>
+</esptool>

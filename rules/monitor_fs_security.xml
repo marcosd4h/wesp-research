@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-fs-3003" altitude="410000"/>
+  <rules>
+    <rule name="fs-security" event="FsSetFileSecurity" eventType="3003"
+          lifetime="transient" action="1"/>
+  </rules>
+</esptool>

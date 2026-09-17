@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-mon-q-ms" altitude="387300"/>
+  <rules>
+    <rule name="mailslot-create-query" event="MailslotCreate" eventType="6000"
+          lifetime="transient" action="0">
+      <query kind="mailslot" properties="1"/>
+    </rule>
+  </rules>
+</esptool>

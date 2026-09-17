@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-filt-ev" altitude="410000"/>
+  <rules>
+    <rule name="ev-num" event="ProcessCreate" eventType="1000"
+          lifetime="transient" action="1">
+      <filter type="4" comparand="1" property="2"
+              value="1000"/>
+    </rule>
+  </rules>
+</esptool>

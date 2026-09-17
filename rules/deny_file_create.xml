@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-deny-file" altitude="820300"/>
+  <rules>
+    <rule name="deny-file-create" event="FoCreate" eventType="2000"
+          lifetime="transient" action="deny">
+      <filter type="6" comparand="1" property="1"
+              value="$nt:C:\tools\esptool-deny\file_target.txt"/>
+    </rule>
+  </rules>
+</esptool>

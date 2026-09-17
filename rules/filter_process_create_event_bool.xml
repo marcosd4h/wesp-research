@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-filt-evbool" altitude="411800"/>
+  <rules>
+    <rule name="ev-bool" event="ProcessCreate" eventType="1000"
+          lifetime="transient" action="1">
+      <filter type="4" comparand="1" property="1" value="1"/>
+    </rule>
+  </rules>
+</esptool>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-filt-ktm" altitude="410000"/>
+  <rules>
+    <rule name="ktm-num" event="KtmCommit" eventType="3010"
+          lifetime="transient" action="1">
+      <filter type="16" comparand="1" property="2"
+              value="0"/>
+    </rule>
+  </rules>
+</esptool>

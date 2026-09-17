@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-mon-q-desk" altitude="387600"/>
+  <rules>
+    <rule name="ob-create-query-desktop" event="ObCreateHandle" eventType="8000"
+          lifetime="transient" action="0">
+      <query kind="desktop" properties="1"/>
+    </rule>
+  </rules>
+</esptool>

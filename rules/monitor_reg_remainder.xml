@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-rest-reg" altitude="385000"/>
+  <rules>
+    <rule name="reg-delete-key" event="RegDeleteKey" eventType="7002"
+          lifetime="transient" action="1"/>
+    <rule name="reg-delete-value" event="RegDeleteValueKey" eventType="7004"
+          lifetime="transient" action="1"/>
+    <rule name="reg-rename-key" event="RegRenameKey" eventType="7005"
+          lifetime="transient" action="1"/>
+    <rule name="reg-replace-key" event="RegReplaceKey" eventType="7006"
+          lifetime="transient" action="1"/>
+    <rule name="reg-restore-key" event="RegRestoreKey" eventType="7007"
+          lifetime="transient" action="1"/>
+    <rule name="reg-set-security" event="RegSetKeySecurity" eventType="7008"
+          lifetime="transient" action="1"/>
+    <rule name="reg-query-key" event="RegQueryKey" eventType="7009"
+          lifetime="transient" action="1"/>
+    <rule name="reg-query-value" event="RegQueryValueKey" eventType="7010"
+          lifetime="transient" action="1"/>
+    <rule name="reg-save-key" event="RegSaveKey" eventType="7011"
+          lifetime="transient" action="1"/>
+    <rule name="reg-load-key" event="RegLoadKey" eventType="7012"
+          lifetime="transient" action="1"/>
+    <rule name="reg-enum-key" event="RegEnumKey" eventType="7013"
+          lifetime="transient" action="1"/>
+    <rule name="reg-enum-value" event="RegEnumValueKey" eventType="7014"
+          lifetime="transient" action="1"/>
+  </rules>
+</esptool>

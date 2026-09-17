@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-filt-pat" altitude="411600"/>
+  <rules>
+    <rule name="proc-pattern-cmd" event="ProcessCreate" eventType="1000"
+          lifetime="transient" action="1">
+      <filter type="10" comparand="3" property="1" value="*cmd.exe"/>
+    </rule>
+  </rules>
+</esptool>

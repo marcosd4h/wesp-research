@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-fo-17" altitude="410000"/>
+  <rules>
+    <rule name="fo-17" event="FoCreate" eventType="2000"
+          lifetime="transient" action="1">
+      <filter type="5" comparand="3" property="17"
+              value="*esptool_prop17.txt"/>
+    </rule>
+  </rules>
+</esptool>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-mon-q-disk" altitude="387500"/>
+  <rules>
+    <rule name="vol-fsctl-query-disk" event="VolumeFsctl" eventType="4002"
+          lifetime="transient" action="0">
+      <query kind="disk" properties="1"/>
+    </rule>
+  </rules>
+</esptool>

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-subrules" altitude="410000"/>
+  <rules>
+    <rule name="sub-notify" event="ProcessCreate" eventType="1000"
+          lifetime="transient" action="1"/>
+    <rule name="match-sub" event="ProcessCreate" eventType="1000"
+          lifetime="transient" action="7"/>
+  </rules>
+</esptool>

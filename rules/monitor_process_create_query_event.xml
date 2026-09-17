@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-mon-q-event" altitude="386400"/>
+  <rules>
+    <rule name="process-create-query-event" event="ProcessCreate" eventType="1000"
+          lifetime="transient" action="0">
+      <query kind="event" properties="1"/>
+    </rule>
+  </rules>
+</esptool>

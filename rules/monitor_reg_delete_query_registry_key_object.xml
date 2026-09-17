@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-mon-q-rko" altitude="387100"/>
+  <rules>
+    <rule name="reg-delete-query-rko" event="RegDeleteKey" eventType="7002"
+          lifetime="transient" action="0">
+      <query kind="registry-key-object" properties="1"/>
+    </rule>
+  </rules>
+</esptool>

@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-filt-coll" altitude="410000"/>
+  <rules>
+    <rule name="proc-coll" event="ProcessCreate" eventType="1000"
+          lifetime="transient" action="1">
+      <filter type="10" comparand="4" property="1"
+              value="$nt:C:\Windows\System32\cmd.exe"/>
+    </rule>
+  </rules>
+</esptool>

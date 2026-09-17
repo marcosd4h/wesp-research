@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-mon-q-stream-alias" altitude="387900"/>
+  <rules>
+    <rule name="fo-create-query-stream-alias" event="FoCreate" eventType="2000"
+          lifetime="transient" action="0">
+      <query kind="stream" properties="1"/>
+    </rule>
+  </rules>
+</esptool>

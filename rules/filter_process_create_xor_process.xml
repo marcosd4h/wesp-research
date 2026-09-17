@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-filt-xor" altitude="411400"/>
+  <rules>
+    <rule name="proc-xor-images" event="ProcessCreate" eventType="1000"
+          lifetime="transient" action="1">
+      <xor>
+        <filter type="10" comparand="1" property="1"
+                value="$nt:C:\Windows\System32\cmd.exe"/>
+        <filter type="10" comparand="1" property="1"
+                value="$nt:C:\Windows\System32\notepad.exe"/>
+      </xor>
+    </rule>
+  </rules>
+</esptool>

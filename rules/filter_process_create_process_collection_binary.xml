@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-filt-coll-bin" altitude="411200"/>
+  <collections>
+    <collection name="esp-bytes" type="binary">
+      <entry>65-73-70</entry>
+    </collection>
+  </collections>
+  <rules>
+    <rule name="proc-coll-bin" event="ProcessCreate" eventType="1000"
+          lifetime="transient" action="1">
+      <filter type="10" comparand="1" property="1"
+              value="$nt:C:\Windows\System32\cmd.exe"/>
+    </rule>
+  </rules>
+</esptool>

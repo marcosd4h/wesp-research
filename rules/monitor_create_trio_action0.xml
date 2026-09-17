@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Empty-filter rules for process, file-object, and registry create.
+  No filter elements: InstallRules skips CreateFilterTree.
+-->
+<esptool>
+  <client name="esptool-mon-create" altitude="385000"/>
+
+  <rules>
+    <rule name="process-create" event="ProcessCreate" eventType="1000"
+          lifetime="transient" action="0"/>
+    <rule name="file-object-create" event="FoCreate" eventType="2000"
+          lifetime="transient" action="0"/>
+    <rule name="registry-create-key" event="RegCreateKey" eventType="7000"
+          lifetime="transient" action="0"/>
+  </rules>
+</esptool>

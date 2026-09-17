@@ -1,0 +1,27 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "esptool", "esptool.vcxproj", "{7F3B2A10-9C4D-4E7A-9B21-8D5E6F1A2C34}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "esptool_tests", "tests\esptool_tests.vcxproj", "{9E2F4C18-6A70-4B3D-8E11-5D9A0C7B2F44}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{7F3B2A10-9C4D-4E7A-9B21-8D5E6F1A2C34}.Debug|x64.ActiveCfg = Debug|x64
+		{7F3B2A10-9C4D-4E7A-9B21-8D5E6F1A2C34}.Debug|x64.Build.0 = Debug|x64
+		{7F3B2A10-9C4D-4E7A-9B21-8D5E6F1A2C34}.Release|x64.ActiveCfg = Release|x64
+		{7F3B2A10-9C4D-4E7A-9B21-8D5E6F1A2C34}.Release|x64.Build.0 = Release|x64
+		{9E2F4C18-6A70-4B3D-8E11-5D9A0C7B2F44}.Debug|x64.ActiveCfg = Debug|x64
+		{9E2F4C18-6A70-4B3D-8E11-5D9A0C7B2F44}.Debug|x64.Build.0 = Debug|x64
+		{9E2F4C18-6A70-4B3D-8E11-5D9A0C7B2F44}.Release|x64.ActiveCfg = Release|x64
+		{9E2F4C18-6A70-4B3D-8E11-5D9A0C7B2F44}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

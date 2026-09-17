@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-mon-trio-named" altitude="387700"/>
+  <rules>
+    <rule name="process-create" event="ProcessCreate"
+          lifetime="transient" action="0"/>
+    <rule name="file-create" event="FileCreate"
+          lifetime="transient" action="0"/>
+    <rule name="fo-create" event="fo_create"
+          lifetime="transient" action="0"/>
+    <rule name="reg-create" event="RegCreateKey"
+          lifetime="transient" action="0"/>
+  </rules>
+</esptool>

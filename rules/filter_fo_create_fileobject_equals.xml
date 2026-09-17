@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-fo-eq" altitude="410000"/>
+  <rules>
+    <rule name="fo-eq-create" event="FoCreate" eventType="2000"
+          lifetime="transient" action="1">
+      <filter type="6" comparand="1" property="1"
+              value="REPLACE_FO_EQUALS"/>
+    </rule>
+  </rules>
+</esptool>

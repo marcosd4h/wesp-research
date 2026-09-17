@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- FoOpen (event type 2001) is driver-enforceable: it is in the enforce-compat
+     set because the FS pre-operation callback writes a disposition
+     (qword_1803BB230). The fixed espclient.dll client refuses the enforcing
+     descriptor for 2001, so this rule requires the esptool enforce-compat
+     opt-in, which patches EventModify::from_ffi in memory for the current
+     process:
+
+       esptool rules -rules deny_fo_open_fileobject_deny.xml -enforce-compat
+
+     Without enforce-compat the rule is refused with a named diagnostic
+     instead of installing a non-enforcing rule. Verified live: the open is
+     denied with STATUS_NOT_FOUND and the negative control opens. -->
+<esptool>
+  <client name="esptool-deny-fo-open" altitude="820320"/>
+  <rules>
+    <rule name="deny-fo-open-fileobject" event="FoOpen" eventType="2001"
+          lifetime="transient" action="deny">
+      <filter type="6" comparand="1" property="1"
+              value="$nt:C:\tools\esptool-deny\fo_open_target.txt"/>
+    </rule>
+  </rules>
+</esptool>

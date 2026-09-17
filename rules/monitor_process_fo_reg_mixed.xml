@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Additional event families. Empty filters. action 0 is rewritten to
+  queue-backed selector 1.
+-->
+<esptool>
+  <client name="esptool-more" altitude="385000"/>
+  <rules>
+    <rule name="process-terminate" event="ProcessTerminate" eventType="1001"
+          lifetime="transient" action="0"/>
+    <rule name="process-load-image" event="ProcessLoadImage" eventType="1002"
+          lifetime="transient" action="0"/>
+    <rule name="file-open" event="FoOpen" eventType="2001"
+          lifetime="transient" action="0"/>
+    <rule name="file-write" event="FoWrite" eventType="2003"
+          lifetime="transient" action="0"/>
+    <rule name="file-cleanup" event="FoCleanup" eventType="2004"
+          lifetime="transient" action="0"/>
+    <rule name="reg-open" event="RegOpenKey" eventType="7001"
+          lifetime="transient" action="0"/>
+    <rule name="reg-set-value" event="RegSetValueKey" eventType="7003"
+          lifetime="transient" action="0"/>
+    <rule name="reg-query-value" event="RegQueryValueKey" eventType="7010"
+          lifetime="transient" action="0"/>
+  </rules>
+</esptool>

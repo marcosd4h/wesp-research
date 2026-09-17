@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-filt-coll-named" altitude="411000"/>
+  <collections>
+    <collection name="cmd-images" type="string">
+      <entry>$nt:C:\Windows\System32\cmd.exe</entry>
+    </collection>
+  </collections>
+  <rules>
+    <rule name="proc-coll-named" event="ProcessCreate" eventType="1000"
+          lifetime="transient" action="1">
+      <filter type="10" comparand="4" property="1" collection="cmd-images"/>
+    </rule>
+  </rules>
+</esptool>

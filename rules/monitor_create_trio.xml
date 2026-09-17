@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Match-all rules for process, file-object, and registry create.
+  action="1" is the queue-backed arm.
+-->
+<esptool>
+  <client name="esptool-monitor" altitude="385000"/>
+  <rules>
+    <rule name="process-create" event="ProcessCreate" eventType="1000"
+          lifetime="transient" action="1"/>
+    <rule name="file-create" event="FileCreate" eventType="2000"
+          lifetime="transient" action="1"/>
+    <rule name="reg-create" event="RegCreateKey" eventType="7000"
+          lifetime="transient" action="1"/>
+  </rules>
+</esptool>

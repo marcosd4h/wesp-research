@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<esptool>
+  <client name="esptool-mon-q-thr" altitude="386700"/>
+  <rules>
+    <rule name="thread-start-query" event="ThreadStart" eventType="2"
+          lifetime="transient" action="0">
+      <query kind="thread" properties="1"/>
+    </rule>
+  </rules>
+</esptool>

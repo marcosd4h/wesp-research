@@ -1,0 +1,8 @@
+# Unified build output
+build/
+
+# Visual Studio IDE cache
+.vs/
+
+# Per-user project settings
+*.vcxproj.user
