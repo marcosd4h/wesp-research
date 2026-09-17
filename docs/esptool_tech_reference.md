@@ -1,4 +1,4 @@
-# Esptool Architectural Reference and Harness Guidelogy
+# Esptool Architectural Reference
 
 The Windows Endpoint Security Platform (WESP, also designated ESP) is an operating system subsystem introduced in Windows 11 Insider Preview builds (25H2, reference builds 10.0.29641 through 10.0.29667). WESP provides security software with a consolidated kernel telemetry pipeline and real-time policy enforcement engine across Windows executive subsystems.
 
