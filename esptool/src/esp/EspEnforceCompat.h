@@ -127,17 +127,18 @@ inline constexpr std::uint8_t kEnforceCompatExpectedSha256[32] = {
 // Included (both conditions):
 //   1000            process create            (process notify disposition)
 //   2001-2003       FoOpen/Read/Write         (FS disposition)
-//   3000-3008 minus 3007 filesystem set       (FS disposition)
+//   3000-3006, 3008 filesystem set            (FS disposition)
 //   4000, 4002      VolumeMount, VolumeFsctl  (FS disposition)
 // Excluded:
 //   2000            FoCreate: the unpatched client already accepts it
 //   2004            FoCleanup: capability mask 0x09, bit 0x02 clear
-//   3007            FileQueryOpen: no FS disposition for the query-open class
+//   3007            FileQueryOpen: live record 0x19 (bit 0x02 clear) and no FS
+//                   disposition for the query-open class
 //   8000/8001       capability mask 0x19 (bit 0x02 clear; live-recorded 0x19),
 //                   so the driver cannot enforce them
 //   5000/6000       bit 0x02 set (mask 0x0B) but no pre-operation DENY callback
-//   9000            no capability record in the driver table for this build OR
-//                   bit 0x02 clear, and no pre-operation DENY callback
+//   9000            live record 0x07 (bit 0x02 set) but no pre-operation DENY
+//                   callback, so condition (2) excludes it
 //   7000-7014       acceptance bit set but the class cannot block (no
 //                   create/open disposition) and 7003 cannot even build
 
@@ -149,14 +150,17 @@ inline constexpr std::uint32_t kDriverEnforceCapableBit = 0x02;
 // event type has no capability record on this build. This table is the
 // authoritative source for condition (1), so a type cannot be added to the
 // disposition set without a mask entry: a type with no record returns 0, has
-// bit 0x02 clear, and IsDriverEnforceCapable returns false.
+// bit 0x02 clear, and IsDriverEnforceCapable returns false. Live ground truth
+// (VM_120 kernel reads): 3007={type 3007, caps 0x19, extra 0x01},
+// 9000={type 9000, caps 0x07, extra 0x00}.
 //
 //   mask 0x03 -> 1000, 2001
-//   mask 0x0B -> 2002, 2003, 3000..3008, 4000, 4002, 5000, 6000, 7002..7014
+//   mask 0x0B -> 2002, 2003, 3000..3006, 3008, 4000, 4002, 5000, 6000, 7002..7014
 //   mask 0x1B -> 2000, 7000, 7001
 //   mask 0x09 -> 2004, 3009       (bit 0x02 CLEAR)
-//   mask 0x19 -> 8000, 8001       (bit 0x02 CLEAR; live-recorded 0x19)
-//   no record -> 9000 and any type not listed above (bit 0x02 CLEAR)
+//   mask 0x19 -> 3007, 8000, 8001 (bit 0x02 CLEAR; live-recorded)
+//   mask 0x07 -> 9000             (bit 0x02 SET; live-recorded, no DENY callback)
+//   no record -> 3010, 3011, 4001 and any type not listed above (bit 0x02 CLEAR)
 [[nodiscard]] constexpr std::uint32_t DriverEventCapabilityMask(
     std::uint32_t event_type) noexcept {
   // 0x03: process create and file open.
@@ -169,10 +173,12 @@ inline constexpr std::uint32_t kDriverEnforceCapableBit = 0x02;
       event_type == kEventRegCreateKey + 1) {
     return 0x1B;
   }
-  // 0x0B: file read/write, the filesystem range 3000..3008, volume mount and
-  // fsctl, pipe and mailslot create, and registry 7002..7014.
+  // 0x0B: file read/write, the filesystem range 3000..3006 plus 3008 (3007 is
+  // 0x19, see below), volume mount and fsctl, pipe and mailslot create, and
+  // registry 7002..7014.
   if (event_type == kEventFoRead || event_type == kEventFoWrite ||
-      (event_type >= kEventFsMin && event_type <= kEventFsLockFile) ||
+      (event_type >= kEventFsMin && event_type <= kEventFsLockFile &&
+       event_type != kEventFsQueryOpen) ||
       event_type == kEventVolumeMount || event_type == kEventVolumeFsctl ||
       event_type == kEventPipeCreate || event_type == kEventMailslotCreate ||
       (event_type >= kEventRegCreateKey + 2 && event_type <= kEventRegMax)) {
@@ -183,13 +189,19 @@ inline constexpr std::uint32_t kDriverEnforceCapableBit = 0x02;
   if (event_type == kEventFoCleanup || event_type == kEventFsLockFile + 1) {
     return 0x09;
   }
-  // 0x19 (bit 0x02 CLEAR): the object-manager pair. The live read of the
-  // ObCreateHandle record is `40 1f 00 00 19 00 00 00` (event type 8000, flags
-  // 0x19), so the pair carries a real mask whose enforce-capable bit is clear
-  // rather than no record at all.
-  if (event_type == kEventObCreateHandle ||
+  // 0x19 (bit 0x02 CLEAR): FileQueryOpen and the object-manager pair. Live reads:
+  // 3007={type 3007, caps 0x19, extra 0x01}; ObCreateHandle `40 1f 00 00 19 00
+  // 00 00` (event type 8000, flags 0x19). Each carries a real mask whose
+  // enforce-capable bit is clear rather than no record at all.
+  if (event_type == kEventFsQueryOpen || event_type == kEventObCreateHandle ||
       event_type == kEventObDuplicateHandle) {
     return 0x19;
+  }
+  // 0x07 (bit 0x02 SET): BootLoadDriver. Live read 9000={type 9000, caps 0x07,
+  // extra 0x00}. Condition (2) still excludes it because no pre-operation
+  // callback writes a disposition for this type.
+  if (event_type == kEventBootLoadDriver) {
+    return 0x07;
   }
   return 0;
 }
@@ -204,7 +216,8 @@ inline constexpr std::uint32_t kDriverEnforceCapableBit = 0x02;
 // Condition (2): the driver dispatches a pre-operation callback for this event
 // type that can WRITE a disposition. Deliberately independent of the capability
 // mask: 5000 and 6000 carry the acceptance bit (mask 0x0B) but their callbacks
-// never write a disposition, 9000 has no capability record on this build, and a
+// never write a disposition, 9000 carries live mask 0x07 yet has no DENY
+// callback, and a
 // type can have a disposition callback while a future build clears the bit. The
 // FS/KTM callback writes qword_1803BB230; the process notify callback writes
 // dword_1803C66A4.
@@ -262,6 +275,16 @@ static_assert(!IsDriverEnforceCapable(kEventObCreateHandle),
 static_assert(
     !IsDriverEnforceCapable(kEventObDuplicateHandle),
     "ObDuplicateHandle record 0x19 must not be driver-enforce-capable");
+static_assert(DriverEventCapabilityMask(kEventFsQueryOpen) == 0x19,
+              "FileQueryOpen live record is 0x19");
+static_assert(!IsDriverEnforceCapable(kEventFsQueryOpen),
+              "FileQueryOpen record 0x19 must not be driver-enforce-capable");
+static_assert(DriverEventCapabilityMask(kEventBootLoadDriver) == 0x07,
+              "BootLoadDriver live record is 0x07");
+static_assert(IsDriverEnforceCapable(kEventBootLoadDriver),
+              "BootLoadDriver record 0x07 carries the enforce bit");
+static_assert(!IsEnforceCompatEventType(kEventBootLoadDriver),
+              "BootLoadDriver has the bit but no disposition callback");
 
 // Copies of the original and patched six-byte sequences are defined above as
 // kFromFfiOriginalBytes / kFromFfiPatchedBytes.

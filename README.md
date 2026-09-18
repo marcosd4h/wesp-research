@@ -15,7 +15,7 @@ To explore and test these internals firsthand, the repository includes `esptool`
 The technical findings, specifications, and tooling are documented across three core references:
 
 - [WESP Reverse-Engineered Architecture and Technical Reference](docs/wesp_re_tech_reference.md): Detailed reverse engineering analysis of the kernel driver architecture (`wesp.sys`), Filter Manager communication port wire protocols, the in-kernel Reduced Ordered Binary Decision Diagram (ROBDD) evaluation engine, disposition tables, security gates, and early-boot synchronization (`wesp_elam.sys`).
-- [Esptool Architectural Reference and Harness Guide](docs/esptool_tech_reference.md): Complete technical reference for the research harness, detailing operational planes, the 36-command execution reference with parameter arities and sequences, live diagnostic scenarios, trust scaffolding, and the automated smoke test runner.
+- [Esptool Architectural Reference](docs/esptool_tech_reference.md): Complete technical reference for the research harness, detailing operational planes, the 36-command execution reference with parameter arities and sequences, live diagnostic scenarios, trust scaffolding, and the automated smoke test runner.
 - [Esptool Declarative XML Rule Specification and Reference](rules/README.md): Full specification for esptool's declarative XML rule format, test fixtures, and XmlLite parser. Covers the XML grammar, 47-item error catalog, element schemas, action selectors, kernel disposition codes, relational and numeric operators 1 through 11, complete 15-family property catalogs, and the 118-document test corpus.
 
 # What is WESP?
@@ -370,7 +370,7 @@ Testing and verification:
 1. `esptool` logs the patch confirmation and holds the session active:
    ```text
    [INFO ] auto-provision: test-signing active on non-PPL process; automatic --no-provision selected
-   [WARN ] enforce-compat: rule 'deny-process-create' installed via in-memory client patch; live enforcement not verified
+   [WARN ] enforce-compat: rule 'deny-process-create' installed via in-memory client patch; confirm live denial with canary trigger
    rules-hold 20000
    ```
 2. While the rule holds, attempt to execute `proc_target.exe` in a second window:
@@ -394,7 +394,7 @@ Internal execution sequence:
 
 1. `esptool` connects to `\EspFilterPort` and invokes the subsystem-specific reference constructor (`EspCreateProcessReference`, `EspCreateFileReferenceByPath`, or `EspCreateRegistryKeyReference`).
 2. The driver returns an opaque reference handle. `esptool` calls `EspGetEventObjectFromReference` to unwrap the internal event object view.
-3. `EspGetEventObjectType` returns the executive object type code (`2` for Process, `3` for FileObject, `8` for Registry Key).
+3. `EspGetEventObjectType` returns the executive object type code (`2` for Process, `3` for File, `8` for Registry Key).
 4. `EspGetEventObjectId` returns the unique kernel-assigned 64-bit object identifier.
 5. If `--properties` is specified, `esptool` allocates memory and calls the corresponding query export (`EspQueryProcessProperties` or `EspQueryRegistryKeyProperties`) to retrieve property data.
 

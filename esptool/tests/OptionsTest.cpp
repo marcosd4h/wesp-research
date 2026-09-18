@@ -6,6 +6,7 @@
 #include "TestSupport.h"
 #include "cli/Commands.h"
 #include "cli/Options.h"
+#include "ppl/TokenAttribute.h"
 #include "util/StrHelpers.h"
 
 using esptool::cli::Options;
@@ -432,7 +433,7 @@ TEST_CASE("EvaluateTrustPlan decision table covers all matrix branches") {
     std::string err;
     REQUIRE(EvaluateTrustPlan(opt, ctx, plan, err));
     CHECK_FALSE(plan.effective_no_provision);
-    CHECK(plan.target_permission == 10000000);
+    CHECK(plan.target_permission == esptool::ppl::kWespPermissionRestricted);
     CHECK(plan.stamp_needed);
     CHECK(plan.child_required);
   }
@@ -482,7 +483,7 @@ TEST_CASE("EvaluateTrustPlan decision table covers all matrix branches") {
     ctx.test_signing = true;
     ctx.is_ppl = false;
     ctx.attribute_present = true;
-    ctx.attribute_permission = 10000000;
+    ctx.attribute_permission = esptool::ppl::kWespPermissionRestricted;
     TrustPlan plan;
     std::string err;
     REQUIRE(EvaluateTrustPlan(opt, ctx, plan, err));
@@ -517,7 +518,7 @@ TEST_CASE("EvaluateTrustPlan decision table covers all matrix branches") {
     ctx.test_signing = true;
     ctx.is_ppl = true;
     ctx.attribute_present = true;
-    ctx.attribute_permission = 1000000000;  // Full
+    ctx.attribute_permission = esptool::ppl::kWespPermissionFull;  // Full
     TrustPlan plan;
     std::string err;
     REQUIRE(EvaluateTrustPlan(opt, ctx, plan, err));

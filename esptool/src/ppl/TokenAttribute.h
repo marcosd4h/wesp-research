@@ -11,12 +11,22 @@ namespace esptool::ppl {
 
 // Permission values decoded by wesp.sys. Full trust also requires the process
 // to be Antimalware Protected Light. Restricted trust is accepted without
-// that protection check.
-constexpr unsigned kWespPermissionFull = 1000000000u;
-constexpr unsigned kWespPermissionRestricted = 10000000u;
-// Connect-tier reserved discriminator. Upper 16 bits 0xABCD are
-// rejected with STATUS_ACCESS_DENIED before a session is created.
-constexpr unsigned kWespPermissionAbcdDeny = 0xABCD0000u;
+// that protection check. Live ground truth (VM_120, wesp!connect::setup):
+// cmp rbx,2 then cmp ebx,1; neither 1000000000 nor 10000000 occurs anywhere
+// in the binary. Stamping the old literals fails with 0x80070057.
+constexpr unsigned kWespPermissionFull = 2u;
+constexpr unsigned kWespPermissionRestricted = 1u;
+// Connect-tier reserved discriminator. Full 32-bit discriminator DWORD
+// 0x4D564900 (bytes MVI\0) is rejected with STATUS_ACCESS_DENIED before a
+// session is created. Live disassembly shows cmp dword ptr [rsp+60h],4D564900h;
+// 0xABCD occurs nowhere in the binary. Applies to the restricted tier only,
+// checked against the connect-context discriminator DWORD (opcode-3 GUID.Data1).
+constexpr unsigned kWespPermissionAbcdDeny = 0x4D564900u;
+static_assert(kWespPermissionFull == 2u, "live connect compares permission to 2");
+static_assert(kWespPermissionRestricted == 1u,
+              "live connect compares permission to 1");
+static_assert(kWespPermissionAbcdDeny == 0x4D564900u,
+              "live connect compares discriminator to 0x4D564900");
 
 inline constexpr wchar_t kWespPermissionAttributeName[] = L"WESP://Permission";
 inline constexpr char kWespPermissionClaim[] = "WESP://Permission";

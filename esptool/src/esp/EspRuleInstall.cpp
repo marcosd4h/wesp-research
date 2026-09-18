@@ -563,10 +563,10 @@ InstallStatus EspSession::InstallRules(const model::RuleDocument& document) {
         continue;
       }
       if (!SupportsEnforcePayload(spec.eventType)) {
-        // 3007, 8000, and 8001 have capability bit 0x02 clear, so the driver
-        // cannot enforce them; 5000/6000 have the bit but no pre-operation DENY
-        // callback, and 9000 has no capability record on this build. Refuse
-        // early with a named diagnostic.
+        // 3007, 8000, and 8001 have capability bit 0x02 clear (live 0x19), so
+        // the driver cannot enforce them; 5000/6000 have the bit but no
+        // pre-operation DENY callback, and 9000 carries live mask 0x07 yet has
+        // no DENY callback either. Refuse early with a named diagnostic.
         Warn("rule '" + label +
              "': the enforcing action is unavailable for event type " +
              std::to_string(spec.eventType) +
@@ -638,12 +638,11 @@ InstallStatus EspSession::InstallRules(const model::RuleDocument& document) {
     subrule_anchors.push_back(subrule_anchor);
     if (patched_install) {
       // Honest reporting: this rule is armed through an in-memory client patch,
-      // not through native client support. A zero exit code must not be read as
-      // proof that the rule denies.
+      // not through native client support. Install success means the driver
+      // accepted the rule; live denial still requires a canary trigger.
       Log::Warn(
           std::format("enforce-compat: rule '{}' installed via in-memory "
-                      "client patch; live "
-                      "enforcement not verified",
+                      "client patch; confirm live denial with canary trigger",
                       label));
     }
   }

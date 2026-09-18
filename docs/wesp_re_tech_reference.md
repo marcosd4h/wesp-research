@@ -228,7 +228,7 @@ Analysis of WESP spans two specific Windows 11 Insider Preview builds. Every emp
 
 | Target Identifier                 | Operating System Build | Binary Under Test                                             | File Size                 | Verified Functionality                                                                                                                                                                            |
 | :-------------------------------- | :--------------------- | :------------------------------------------------------------ | :------------------------ | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Enforcement Verification Host** | `10.0.29641.0`         | `wesp.sys` / `espclient.dll`                                  | 4,223,608 B / 1,108,088 B | Dynamic kernel debugging (`kd.exe`) host: two-sided gate intersection, native `2000` FoCreate deny (`0x80070490`), `--enforce-compat` process create deny (`0x80004005`), and disposition tables. |
+| **Enforcement Verification Host** | `10.0.29641.0`         | `wesp.sys` / `espclient.dll`                                  | 4,223,608 B / 1,108,088 B | Dynamic kernel debugging (`kd.exe`) host: two-sided gate intersection, native `2000` FoCreate deny (`0x80070490`), `--enforce-compat` process create deny (`ERROR_NOT_FOUND`), and disposition tables. |
 | **Reference Build**               | `10.0.29667.1000`      | `wesp.sys` / `espclient.dll` (file version `0.1.0.156346177`) | 4,338,320 B / 1,122,960 B | Primary reference                                                                                                                                                                                 |
 
 ### Dual-Language Architecture and Schema Invariants
@@ -438,7 +438,7 @@ On the reference build, opcode 5 with a 4-byte or 12-byte context returns `S_OK`
 |   `7`    |       N/A       | Role 0 (Control) | Enumerate Registered Clients       | 64B `ClientRequest` (kind 7)                        | Array of Client GUIDs + trailing u32 count                              | Role 0 only (rejected on Role 1)                                    |
 |   `8`    |       N/A       | Role 0 (Control) | Enumerate Connected Clients        | 64B `ClientRequest` (kind 8)                        | Array of Active Client GUIDs + count                                    | Role 0 only (rejected on Role 1)                                    |
 |   `9`    |       N/A       | Role 0 (Control) | Query Client Descriptor            | 64B `ClientRequest` (target client GUID)            | 32B header + UTF-16 Name & Altitude                                     | Role 0 only (rejected on Role 1)                                    |
-|   `10`   |       `8`       | Role 1 (Session) | Get Event Capabilities             | 64B `ClientRequest` (sparse event type)             | 4B capability bitmask (`BytesReturned == 4`)                            | Tier 0 & Tier 1                                                     |
+|   `10`   |       `7`       | Role 1 (Session) | Get Event Capabilities             | 64B `ClientRequest` (sparse event type)             | 4B capability bitmask (`BytesReturned == 4`)                            | Tier 0 & Tier 1                                                     |
 |   `11`   |       `8`       | Role 1 (Session) | Enumerate Client Rules             | 64B `ClientRequest` (kind 11)                       | Array of Rule GUIDs + trailing count                                    | Tier 0 & Tier 1                                                     |
 |   `12`   |       `9`       | Role 1 (Session) | Remove All Client Rules            | 64B `ClientRequest` (kind 12)                       | 0B                                                                      | Tier 0 & Tier 1                                                     |
 |   `13`   |      `10`       | Role 1 (Session) | Remove Client Rules (by lifetime)  | 64B `ClientRequest` (lifetime filter)               | 0B                                                                      | Tier 0 & Tier 1                                                     |
@@ -474,11 +474,11 @@ Supplied in Header Word 0 of synchronous `FilterSendMessage` requests:
 - `3`: **Reference Event Object**: Creates or duplicates an event object reference from a reference key (`EspRsSendReferenceEventObject`, 15-way key switch). Identity mapped to internal discriminant 3.
 - `4`: **Close Event Object Reference**: Releases a previously created event object reference (`EspRsSendCloseEventObjectReference` transmitting `CloseKey`). Identity mapped to internal discriminant 4.
 - `5`: **Reserved**: No `Esp*` export sends wire tag 5. The driver discriminant-5 arm writes a diagnostic ETW event and returns. Identity mapped to internal discriminant 5.
-- `6`: **Query Object Properties**: Dispatches an on-demand property query against an object reference on the session plane. The client sends wire tag 6; invalid references are rejected with `0x80070057`. The driver discriminant is unresolved, so no internal value is asserted. The object-kind selector field of the property-query request selects the object kind (the driver range check requires the value below 16): `1` process, `2` thread, `3` registry key, `4` registry key object, `5` file object, `6` file stream, `7` file, `8` pipe, `9` mailslot, `10` volume, `11` disk, `12` client, `13` token, `14` KTM transaction, and `15` desktop. Tag `0` is unused by the client.
+- `6`: **Query Object Properties**: Dispatches an on-demand property query against an object reference on the session plane. The client sends wire tag 6; invalid references are rejected with `0x80070057`. The driver discriminant is unresolved, so no internal value is asserted. The object-kind selector field of the property-query request selects the object kind (the driver range check requires the value below 16): `1` process, `2` thread, `3` registry key, `4` registry key object, `5` file object, `6` file stream, `7` file, `8` mailslot, `9` mailslot, `10` volume, `11` disk, `12` desktop, `13` token, `14` KTM transaction, and `15` desktop. Tag `0` selects the client special case.
 - `7`: **Enumerate Registered Clients**: Returns an array of GUIDs for all registered clients (Role 0 only).
 - `8`: **Enumerate Connected Clients**: Returns an array of GUIDs for all currently active connections (Role 0 only).
 - `9`: **Query Client Descriptor**: Returns the variable-length registration descriptor for a client GUID: 32-byte header (GUID echo plus name and altitude pointers) followed by UTF-16 name and altitude, minimum 36 bytes (Role 0 only). The 64-byte request carries the kind at the request header kind field and the target GUID at the target client GUID field; the 40-byte trailing padding area is copied and never read. Cookie-1 and cookie-2 delivery fail with `0xC0000002`; short input returns `0xC0000023`; unknown GUID returns `0xC0000225`; undersized output returns `0xC0000023` with the required count.
-- `10` (Internal Discriminant 8): **Get Event Capabilities**: Queries supported capability bitmasks for an event type. The client pre-checks the type against 47 sparse values and aborts the process unless `BytesReturned` equals 4; the driver re-validates with `is_bit_valid`, admits tiers 0 and 1 on cookie-1 sessions, and dispatches through a per-type switch to the static capability-record table in read-only data (46 static 12-byte records, stride `0xC`), copying the flags field of each capability record. Capability flags are `2000` = `0x1B`, `3007` = `0x19`, `9000` = `0x07`, and `0x01` for the eight mask-table gaps. Type 0 passes both validators and is rejected at dispatch with `0xC000000D`.
+- `10` (Internal Discriminant 7): **Get Event Capabilities**: Queries supported capability bitmasks for an event type. The client pre-checks the type against 47 sparse values and aborts the process unless `BytesReturned` equals 4; the driver re-validates with `is_bit_valid`, admits tiers 0 and 1 on cookie-1 sessions, and dispatches through a per-type switch to the static capability-record table in read-only data (46 static 12-byte records, stride `0xC`), copying the flags field of each capability record. Capability flags are `2000` = `0x1B`, `3007` = `0x19`, `9000` = `0x07`, and `0x01` for the eight mask-table gaps. Type 0 passes both validators and is rejected at dispatch with `0xC000000D`.
 - `11` (Internal Discriminant 8): **Enumerate Client Rules**: Returns an array of rule GUIDs configured for a client.
 - `12` (Internal Discriminant 9): **Remove All Client Rules**: Deletes every rule belonging to the calling client; reply is 0 bytes; Tier 0 and Tier 1.
 - `13` (Internal Discriminant 10): **Remove Client Rules**: Deletes rules filtered by lifetime category.
@@ -545,7 +545,7 @@ The entry steps run in the fixed order below. A step that fails returns an `Err`
 Before filter registration, the driver performs state initialization in the following order (step 1 above runs first inside this phase; step 2 is built last, just before step 3):
 
 - Arms the ETW rundown guard (compare-exchange 0 to 1, store 2) and registers the ETW provider.
-- Runs the Code Integrity probe to set the test-sign gate (the driver arming lifecycle flag).
+- Runs the Code Integrity probe to set the test-sign gate.
 - Probes the optional Policy key: a read-only `ZwOpenKey` (`KEY_READ` `0x20019`) issued from two sites, whose status serves only as a close guard and whose handle is never queried. No code path creates the key, and observation on a real VM reports the Policy key absent across connect, persist, and reboot legs.
 - Allocates the object-identity hash tables and the engine core (272-byte `EventObjectManager` pool allocation, tag `rust`).
 - Opens its service key under `\Registry\Machine\System\CurrentControlSet\Services\Wesp` (access `0xF003F`; deployed state: boot-start driver in group `FSFilter Anti-Virus` with a `FltMgr` dependency; distinct from the persisted-store root).
@@ -575,9 +575,9 @@ participant State as wesp.sys<br/>Global Driver State<br/>(EspState / EspCore)
         Driver->>Driver: EtwRegister(ProviderId)<br/>Publish Traits via EtwSetInformation
         Driver->>Driver: RtlQueryFeatureConfiguration(Feature 63778910)<br/>Evaluate Enable Bits into Gate Byte
         alt Feature Enabled
-            Driver->>Driver: Set driver arming lifecycle flag = 2 (Armed)
-        else Feature Disabled OR Query Failed
-            Driver->>Driver: Set driver arming lifecycle flag = 0 or 1 (Unarmed)
+            Driver->>Driver: Set gate byte = 1 (Proceed)
+        else Feature Disabled
+            Driver->>Driver: Abort load (0xC00000BB)
         end
         Driver->>Driver: ZwCreateKey(ServiceKey)<br/>\\Registry\\Machine\\System\\CurrentControlSet\\Services\\Wesp
         Driver->>Driver: Create 2 "internal_client0" ClientObjects<br/>Seed rules 7000/7001, deltas discarded, slots stay zero
@@ -623,14 +623,14 @@ participant State as wesp.sys<br/>Global Driver State<br/>(EspState / EspCore)
 
 At driver load, `wesp.sys` probes the boot configuration using `RtlQueryFeatureConfiguration` with feature identifier `63778910`.
 
-The driver evaluates the returned enable bits into the driver arming lifecycle flag (the gate byte): feature enabled yields `2` (Armed); feature disabled yields the unarmed value; probe failure yields a `0xC0000298`-class status.
+The driver evaluates the returned enable bits into a gate byte: feature enabled yields `1` (proceed); feature disabled (`0`) aborts driver load with `0xC00000BB` (`STATUS_NOT_SUPPORTED`).
 
 `ZwQuerySystemInformation` with information class `0x67` (System Code Integrity Information) no longer arms the driver at load. That call now occurs only in `connect::setup`, where it enforces the connect-time code-integrity checks (the PPL-or-CI fallback path).
 
-This lifecycle byte gates enforcement callbacks. It is one gate among several; callback families arm at different points (see Publication Barriers):
+The gate byte governs driver load. Enforcement callbacks separately wait on a readiness flag reading `2` before executing (see Publication Barriers):
 
-- **Armed State (`2`)**: Minifilter pre-operation and post-operation callbacks, executive notifications, port connect requests, and message dispatches execute normally.
-- **Unarmed State (`0` or `1`)**: Registered enforcement callbacks return immediately without processing. Port connection requests are denied with `STATUS_ACCESS_DENIED` (`0xC0000022`), and minifilter callbacks return `FLT_PREOP_SUCCESS_NO_CALLBACK` or `FLT_POSTOP_FINISHED_PROCESSING`. A production-CI host (value `1`) still registers and attaches; the callback stubs then return success without invoking engine logic.
+- **Ready (`2`)**: Minifilter pre-operation and post-operation callbacks, executive notifications, port connect requests, and message dispatches execute normally.
+- **Not ready**: Registered enforcement callbacks return immediately without processing. Port connection requests are denied with `STATUS_ACCESS_DENIED` (`0xC0000022`), and minifilter callbacks return `FLT_PREOP_SUCCESS_NO_CALLBACK` or `FLT_POSTOP_FINISHED_PROCESSING`.
 
 This check is distinct from caller authentication: it validates whether the kernel driver itself is permitted to execute active enforcement on the host.
 
@@ -732,7 +732,7 @@ The driver publishes its global state through readiness bytes paired with `EX_RU
 | Byte                                                  | Armed when                                              | Callback family that waits on it                                                                                                                      |
 | ----------------------------------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
 | the filesystem/registry/object-manager readiness flag | After `CmRegisterCallbackEx` and `EspState` allocation  | Filesystem, registry, and object-manager pre-operations; ELAM drain thread                                                                            |
-| the driver arming lifecycle flag                      | After the Code Integrity probe                          | Checked (not waited) by the `Mp*`, `cm::*`, `ps::*`, and `ob::*` engines (test-sign gate; this byte is the boot-gate lifecycle byte)                  |
+| the test-sign gate byte                         | After the Code Integrity probe                          | Checked (not waited) by the `Mp*`, `cm::*`, `ps::*`, and `ob::*` engines                                                                                                                      |
 | the process/thread/image notify readiness flag        | After `EspCore` allocation                              | Process, thread, and image notify routines                                                                                                            |
 | the ETW rundown guard                                 | Before `EtwRegister` (compare-exchange 0 to 1, store 2) | ETW write paths contain no wait on the ETW rundown guard; the paths use level guards instead; the barrier is the guard transition and rundown pairing |
 
@@ -742,11 +742,11 @@ Each callback family applies a conjunction of gates rather than testing one byte
 
 | Plane                                               | Gate conjunction                                                                                                                                                                   |
 | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Filesystem, registry, object-manager pre-operations | Wait on the filesystem/registry/object-manager readiness flag; require the driver arming lifecycle flag armed (2); then typed slot or the wildcard in-flight event counter nonzero |
+| Filesystem, registry, object-manager pre-operations | Wait on the filesystem/registry/object-manager readiness flag; require the readiness flag armed (2); then typed slot or the wildcard in-flight event counter nonzero |
 | Registry (additional)                               | `wait_for_elam_cm_stop` ELAM barrier (idempotent via the ELAM synchronization barrier flag) before the counter check                                                               |
-| Process, thread, image notify                       | Wait on the process/thread/image notify readiness flag; require the driver arming lifecycle flag to read 2; then the corresponding typed event counter                             |
+| Process, thread, image notify                       | Wait on the process/thread/image notify readiness flag; require the readiness flag to read 2; then the corresponding typed event counter                             |
 | Object handle create or duplicate                   | The object handle create counter slot or the object handle duplicate counter slot, or the wildcard in-flight event counter                                                         |
-| Port connect                                        | The driver arming lifecycle flag reads 2 at connect; the claim and PPL or CI check follows                                                                                         |
+| Port connect                                        | The readiness flag reads 2 at connect; the claim and PPL or CI check follows                                                                                         |
 
 ### Driver Unload and Teardown Sequence
 
@@ -779,7 +779,7 @@ The `wesp.sys` driver establishes interception hooks across multiple Windows exe
   - Subsystem Threads (type 1): Intercepts user-mode subsystem threads, generating `ThreadCreate` and `ThreadTerminate` events. It evaluates thread process identity against the calling process, asserting a cross-process flag (`CurrentProcess != TargetProcess`) to identify remote thread injection.
   - Non-System Threads (type 0): Intercepts native non-system thread creation, generating `ThreadStart` events.
 - **Image Load Interception**: Registered via `PsSetLoadImageNotifyRoutineEx`. It captures executable and DLL module mappings. When process identifier `0` is passed, the driver normalizes the value to the System process identifier (`4`). The driver inspects image properties; if the system-mode image flag is set, it extracts the backing file object to link image execution with filesystem origin.
-- **Object Manager Handle Interception**: Registered via `ObRegisterCallbacks` (the altitude string supplied with this registration is a 4-character value recorded as `L"1234"`). It registers pre-operation and post-operation callbacks covering `PsProcessType`, `PsThreadType`, and `ExDesktopObjectType` for both `OB_OPERATION_HANDLE_CREATE` and `OB_OPERATION_HANDLE_DUPLICATE` (operation mask 3). The pre-operation callback evaluates requested access masks against policy, but its mask store does not reach the `DesiredAccess` field: both guarded stores write through the RegistrationContext slot instead, so the callback has no effective refusal mechanism. The post-operation callback reports the correlated final access mask (entry gated on the combined GrantedAccess/ReturnStatus field; the duplicate path reads `Parameters->GrantedAccess` into rule evaluation). When intercepting operations on `ExDesktopObjectType`, desktop objects are managed through an internal `DesktopMarker` borrow; the driver resolves desktop object names via `ObQueryNameString`, initiating with a 1,024-byte stack buffer and dynamically allocating a non-paged pool buffer if `STATUS_BUFFER_TOO_SMALL` is returned.
+- **Object Manager Handle Interception**: Registered via `ObRegisterCallbacks` (the altitude string supplied with this registration is a 4-character value recorded as `L"1234"`). It registers pre-operation and post-operation callbacks covering `PsProcessType`, `PsThreadType`, and `ExDesktopObjectType` for both `OB_OPERATION_HANDLE_CREATE` and `OB_OPERATION_HANDLE_DUPLICATE` (operation mask 3). The pre-operation callback evaluates requested access masks against policy, and its mask store reaches the `DesiredAccess` field: both guarded stores (conditional on action `1` or `2`) write the computed mask into the `DesiredAccess` field of the operation parameters for handle creation and duplication. The post-operation callback reports the correlated final access mask (entry gated on the combined GrantedAccess/ReturnStatus field; the duplicate path reads `Parameters->GrantedAccess` into rule evaluation). When intercepting operations on `ExDesktopObjectType`, desktop objects are managed through an internal `DesktopMarker` borrow; the driver resolves desktop object names via `ObQueryNameString`, initiating with a 1,024-byte stack buffer and dynamically allocating a non-paged pool buffer if `STATUS_BUFFER_TOO_SMALL` is returned.
 - **Configuration Manager Registry Interception**: Registered via `CmRegisterCallbackEx` at altitude `1000001`. It maps the registry notify classes through a 31-slot jump table. Callbacks synchronize with ELAM boot state through an idempotent barrier (`wait_for_elam_cm_stop`).
 
 A kernel-side constraint applies to three of the four notify registrations. `PsSetCreateProcessNotifyRoutineEx2`, `PsSetCreateThreadNotifyRoutineEx`, and `ObRegisterCallbacks` require the registering image to be signed (`MmVerifyCallbackFunctionCheckFlags`) and fail with `STATUS_ACCESS_DENIED` otherwise. `PsSetLoadImageNotifyRoutineEx` does not perform this check.
@@ -814,7 +814,7 @@ sequenceDiagram
     end
 
     rect rgb(240, 245, 255)
-        Note over Caller,Target: Scenario B: Handle Duplication (evaluated, not restricted)
+        Note over Caller,Target: Scenario B: Handle Duplication (evaluated, telemetry enqueued)
         Caller->>WinExec: OpenProcess / DuplicateHandle(<br/>  TargetProcess, DesiredAccess: PROCESS_ALL_ACCESS<br/>)
         activate WinExec
         WinExec->>Driver: ObRegisterCallbacks Pre-Operation(<br/>  Operation: DuplicateHandle, Parameters<br/>)
@@ -824,7 +824,7 @@ sequenceDiagram
         activate Engine
         Engine-->>Driver: Engine-Supplied Mask Computed
         deactivate Engine
-        Driver->>Driver: Mask Store Writes Through RegistrationContext Slot<br/>(DesiredAccess Untouched: No Effective Refusal)
+        Driver->>Driver: Mask Store Writes Computed Mask<br/>into DesiredAccess Field
         Driver->>Driver: Insert Correlation Entry into CorrelationTable
         Driver-->>WinExec: Return Pre-Operation Callback
         deactivate Driver
@@ -956,7 +956,7 @@ The `wesp.sys` driver contains an integrated antimalware engine consisting of 12
 The engine operates on a central state allocation (`EspFltData`) that coordinates operational capabilities:
 
 - **Static Architecture**: All 129 engine functions (`Mp*` in the baseline fork analysis, `EspFlt*` in the current build) are compiled directly into `wesp.sys`. The binary does not import or link against `WdFilter.sys`.
-- **Engine Provenance**: External fork analysis identifies the 129 functions as a statically compiled, feature-trimmed derivative of the Defender `WdFilter.sys` engine, reporting 68 shared names and 4 functions instruction-identical modulo image base, both reference the engine global `MpData` and pool tag `0x7375704D`, and the fork routes filesystem events to a `wesp.sys`-specific `EspFs*` layer. That analysis reports a control comparison of adjacent `WdFilter` builds at 99.5 percent instruction-identical, indicating a deliberate fork rather than version drift. The current build renames the engine prefix from `Mp*` to `EspFlt*` (pool tag `0x64664645`); the shared-name counts above describe the analyzed baseline and are retained as fork evidence. The rename is a clean 129-to-129 substitution with one deviation: `MpFilterInitialize` becomes `EspFltInitialize` (the `Filter` infix is dropped).
+- **Engine Provenance**: External fork analysis identifies the 129 functions as a statically compiled, feature-trimmed derivative of the Defender `WdFilter.sys` engine, reporting 68 shared names and 4 functions instruction-identical modulo image base, both reference the engine global `MpData` and pool tag `0x7375704D`, and the fork routes filesystem events to a `wesp.sys`-specific `EspFs*` layer. That analysis reports a control comparison of adjacent `WdFilter` builds at 99.5 percent instruction-identical, indicating a deliberate fork rather than version drift. The current build renames the engine prefix from `Mp*` to `EspFlt*` (pool tag `0x64664645`); the shared-name counts above describe the analyzed baseline and are retained as fork evidence. The rename is a clean 129-to-129 substitution with one deviation: `MpInitializeFltMgr` becomes `EspFltInitialize`.
 - **Safe-Boot Refusal**: Engine initialization checks `InitSafeBootMode`; when a safe-mode boot is detected, initialization is refused with status `0xC000035F`.
 - **Dynamic Kernel Binding**: The engine probes operating system build levels, dynamically resolving kernel routines including signing level queries (`SeGetCachedSigningLevel`), kernel-mode extended attribute setting (`FsRtlSetKernelEaFile`), and section scan registration (`FltRegisterForDataScan`).
 - **Volume Context Caching (`EspFltInstanceContextInfo`)**: Per-volume characteristics (filesystem type, device characteristics, volume serial numbers) are cached in a 0x88-byte structure stored inside a `OnceCell`. Initialization executes once per volume; re-entrant initialization raises an unrecoverable panic. Volume properties are cached per volume in a separate `FileQueryBuffer` `OnceCell` holding the full `FLT_VOLUME_PROPERTIES` buffer.
@@ -1130,7 +1130,7 @@ Each registry callback executes within a standardized execution frame:
 6. **Security Descriptor Handling (lazy and class-specific)**: `query_security_descriptor` calls `ZwQuerySecurityObject` with `SecurityInformation 0xF`, retries up to 10 times on `STATUS_BUFFER_TOO_SMALL`, and runs lazily through `read_security_descriptor` on a freshly opened handle, not on the callback key handle. Callback-level `RtlValidRelativeSecurityDescriptor` calls exist only in cases 26, 27, 38, and 39 and validate caller-supplied descriptors from `Argument2`. Case 41 performs no query and no validation.
 7. **Hive Restoration File Binding**: On `RegRestoreKey` and `RegSaveKey`, the driver references the target backup file handle using `ObReferenceObjectByHandle` with `IoFileObjectType`, packaging it into a `FileObjectArgument` to bind filesystem provenance to the registry event.
 
-Case 40 skips the arming gate, the helper-form ELAM barrier, and thread registration.
+Case 40 skips the helper-form ELAM barrier and thread registration; it still executes the arming gate wait.
 
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'darkMode': false, 'background': '#ffffff', 'primaryColor': '#ffffff', 'primaryTextColor': '#0f172a', 'primaryBorderColor': '#64748b', 'lineColor': '#475569', 'textColor': '#1e293b', 'actorBkg': '#eef2ff', 'actorBorder': '#4f46e5', 'actorTextColor': '#1e1b4b', 'actorLineColor': '#a5b4fc', 'signalColor': '#475569', 'signalTextColor': '#1e293b', 'labelBoxBkgColor': '#fef3c7', 'labelBoxBorderColor': '#b45309', 'labelTextColor': '#451a03', 'loopTextColor': '#1e293b', 'noteBkgColor': '#fef3c7', 'noteBorderColor': '#b45309', 'noteTextColor': '#451a03', 'activationBkgColor': '#c7d2fe', 'activationBorderColor': '#4f46e5', 'sequenceNumberColor': '#0f172a'}, 'themeCSS': '.messageText { fill: #1e293b !important; stroke: none; } .actor text { fill: #1e1b4b; } .loopText { fill: #1e293b !important; } .labelText { fill: #451a03 !important; } .noteText { fill: #451a03 !important; } svg { background-color: #ffffff !important; }'}}%%
@@ -1286,8 +1286,8 @@ Each event type implements a monomorphized resolver trait supporting 13 core res
   - `resolve_ea_list`: Resolves extended attribute chains.
   - `evaluate_at_parent_chain`: Traverses the process ancestry chain.
 - **Optional Arms (Omitted on Incompatible Events)**:
-  - `resolve_byte_range`: Resolves file lock byte offsets and lengths (omitted on `ThreadStart`, `KtmTransactionRollback`, `RegEnumKey`, `RegSaveKey`).
-  - `resolve_ecp_list`: Resolves Extra Create Parameter lists (omitted on `ThreadStart`, `KtmTransactionRollback`, `RegEnumValueKey`, `RegRestoreKey`).
+  - `resolve_byte_range`: Resolves file lock byte offsets and lengths (omitted on `ThreadTerminate`, `KtmTransactionCommit`, `RegEnumKey`, `RegSaveKey`).
+  - `resolve_ecp_list`: Resolves Extra Create Parameter lists (omitted on `ThreadStart`, `KtmTransactionCommit`, `RegEnumValueKey`, `RegSaveKey`).
   - `resolve_ip_address`: Resolves remote network transport addresses (omitted on `ThreadStart`, `KtmTransactionCommit`, `RegEnumKey`, `RegRestoreKey`).
 
 ### Field Resolution Cache
@@ -1318,7 +1318,7 @@ Numeric comparands can be dynamically transformed before comparison:
 The `wesp.sys` driver implements a seven-layer authorization model covering caller authentication at connect time and message authorization at dispatch time, plus thread attribution for administrative mutations:
 
 - Layer 1: Token Security Attribute Verification (`WESP://Permission` attribute on primary token).
-- Layer 2: Permission Tier Determination (Full Trust `1000000000` vs Restricted Trust `10000000`).
+- Layer 2: Permission Tier Determination (Full Trust `2` vs Restricted Trust `1`).
 - Layer 3: Process Protection Audit (Protected Process Light with Antimalware signer).
 - Layer 4: Code Integrity Fallback (Laboratory/test-signing bypass mode via `CODEINTEGRITY_OPTION_TESTSIGN`).
 - Layer 5: Client Descriptor Validation and Altitude-Sorted Allowlist.
@@ -1331,12 +1331,12 @@ The seven layers compose into a five-gate chain that a connection traverses in o
 | Gate | Check                                                                                                                                 | Failure                                                                                                 |
 | ---- | ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
 | A    | Port DACL (`FLT_PORT_ALL_ACCESS` for Administrators `S-1-5-32-544` and SYSTEM `S-1-5-18`) and mandatory integrity on `\EspFilterPort` | `0x80070005`                                                                                            |
-| B    | Driver armed: the driver arming lifecycle flag reads 2                                                                                | `0xC0000022`                                                                                            |
+| B    | Driver armed: the readiness flag reads 2                                                                                | `0xC0000022`                                                                                            |
 | C    | Opcode parse and cookie mint                                                                                                          | `0xC000000D`, `0xC0000023`, or `0xC0000017` (allocation failure)                                        |
 | D    | `WESP://Permission` claim plus PPL-antimalware or the CI test-sign fallback, then the allowlist lookup                                | `0xC0000022` (claim or PPL), `0x80070490` (allowlist miss)                                              |
 | E    | Per-message cookie type, then the wire parser, then `verify_capabilities == 8`, then dispatch including the event-capability bitmask  | `0xC0000022` (capability), `0xC0000042` (wrong cookie), `0x80070006` (illegal kind on the admin handle) |
 
-The discriminator is the field diagnostic. `0x80070005` means the port DACL refused before the allowlist was consulted. `0xC0000022` means the driver is unarmed or the claim or PPL check failed. `0x80070490` means authentication passed and the client GUID was not registered.
+The discriminator is the field diagnostic. `0x80070005` means the port DACL refused before the allowlist was consulted. `0xC0000022` means the readiness flag is not armed, or the claim or PPL check failed. `0x80070490` means authentication passed and the client GUID was not registered.
 
 `0x80070006` or `0xC0000042` means a valid handle was used with the wrong cookie type. Opcode 5 stops after gate C and does not enter gate D. The `0x8007xxxx` values are user-mode HRESULT layer values with driver-side anchors (`0x80070490` corresponds to `0xC0000225`; `0x80070006` corresponds to `0xC0000042`); no `0x8007xxxx` constant exists in driver code.
 
@@ -1367,13 +1367,13 @@ sequenceDiagram
     end
     rect rgb(255, 250, 240)
         Note over Caller,Auth: Permission Tier Determination
-        alt Permission == 1,000,000,000 (0x3B9ACA00)
+        alt Permission == 2
             Auth->>Auth: Designate Full Trust Tier
-        else Permission == 10,000,000 (0x989680)
-            Auth->>Auth: Check Request High-Word Discriminator
-            alt High Word == 0xABCD
+        else Permission == 1
+            Auth->>Auth: Check Request Discriminator DWORD
+            alt Discriminator == 0x4D564900
                 Auth-->>Caller: STATUS_ACCESS_DENIED (0xC0000022)
-            else High Word != 0xABCD
+            else Discriminator != 0x4D564900
                 Auth->>Auth: Designate Restricted Trust Tier
             end
         else Unrecognized Permission Value
@@ -1440,8 +1440,8 @@ The two security-critical decision paths are pinned below as direct transliterat
 ```c
 // Connect-time authentication (wesp::server::connect)
 NTSTATUS OnConnect(port, context, connection):
-    if (g_lifecycle_byte != 2)                         // boot arming gate
-        return STATUS_ACCESS_DENIED;                   // driver is unarmed on this host
+    if (g_readiness_flag != 2)                       // readiness gate
+        return STATUS_ACCESS_DENIED;                   // readiness flag not armed on this host
 
     token = PsReferencePrimaryToken(connecting_process);      // impersonation tokens bypassed
     attrs = QueryToken(token, TokenSecurityAttributes);       // information class 39
@@ -1449,14 +1449,14 @@ NTSTATUS OnConnect(port, context, connection):
 
     if (attr present and well-formed) {                // OCTET_STRING (0x10), >= 16 bytes, value tag == 1
         permission = attr.value.u32[1];
-        if (permission == 1_000_000_000) {             // 0x3B9ACA00: full trust
+        if (permission == 2) {                             // full trust
             level = QueryProcess(ProcessProtectionInformation); // class 0x3D
             if ((level & 0xF700) != 0x3100)            // signer Antimalware (3), type ProtectedLight (1)
                 if (!CodeIntegrityTestSignEnabled())   // class 0x67, bit 0x2; mismatch-only path
                     return STATUS_ACCESS_DENIED;       // query failure denies directly, no fallback
             tier = FULL_TRUST;
-        } else if (permission == 10_000_000) {         // 0x989680: restricted trust
-            if ((request_field & 0xFFFF0000) == 0xABCD0000)
+        } else if (permission == 1) {                  // restricted trust
+            if (request_field == 0x4D564900)
                 return STATUS_ACCESS_DENIED;           // reserved discriminator cutoff
             tier = RESTRICTED;                         // PPL audit bypassed by construction
         } else {
@@ -1522,8 +1522,8 @@ Connect-time validation constrains the attribute by name, type, and value only a
 
 The second 4 bytes of the attribute payload contain the permission value, which assigns the caller to an operational trust tier:
 
-- **Full Trust Tier (`1000000000` / `0x3B9ACA00`)**: Designates a trusted endpoint agent. Callers proceed to the process protection audit.
-- **Restricted Trust Tier (`10000000` / `0x989680`)**: Designates a constrained client. Callers bypass the process protection audit, but are subjected to message-level discriminator validation. The connection request field is inspected; if its upper 16 bits match the reserved discriminator `0xABCD`, the connection is rejected with `STATUS_ACCESS_DENIED` (`0xC0000022`).
+- **Full Trust Tier (`2`)**: Designates a trusted endpoint agent. Callers proceed to the process protection audit.
+- **Restricted Trust Tier (`1`)**: Designates a constrained client. Callers bypass the process protection audit, but are subjected to message-level discriminator validation. The connection request discriminator DWORD is inspected; if it equals the reserved value `0x4D564900`, the connection is rejected with `STATUS_ACCESS_DENIED` (`0xC0000022`).
 - **Invalid Permission**: Any other value results in connection termination with `STATUS_INVALID_PARAMETER` (`0xC000000D`).
 
 ### Process Protection Audit
@@ -1633,7 +1633,7 @@ Two structural properties govern this matrix. First, rule deployment (wire tag 0
 - **Telemetry loss is preferred over backpressure.** Quota exhaustion drops notifications with `STATUS_QUOTA_EXCEEDED` rather than stalling producers. This protects system availability at the cost of detection completeness: an attacker able to cheaply generate intercepted activity can force drops of the events a security product relies on. Event flooding is a detection-evasion vector against the telemetry plane, though never an enforcement bypass.
 - **`ForceAllow` cannot be persisted.** The override action exists only in engine memory, and neither the wire schema nor the registry schema can express it. A blanket-allow rule therefore cannot survive a reboot through registry tampering; persistence is limited to compilable rule definitions.
 - **The capability gate is fail-closed by construction.** Dispatch requires the verifier to return exactly the sentinel value `8`; any other value, including error codes and uninitialized states, denies the message.
-- **The restricted discriminator is a reserved cutoff.** Restricted-tier connections carrying `0xABCD` in the high 16 bits of the request field are denied outright on the analyzed build; the reference build no longer contains the check. The check is a reserved deny sentinel on the connect-context discriminator dword (the opcode-3 context's `GUID.Data1`), applied only to the restricted tier and before the allowlist lookup. No examined client emits the value.
+- **The restricted discriminator is a reserved cutoff.** Restricted-tier connections carrying `0x4D564900` in the connect-context discriminator DWORD are denied outright. The check is a reserved deny sentinel on the connect-context discriminator dword (the opcode-3 context's `GUID.Data1`), applied only to the restricted tier and before the allowlist lookup. No examined client emits the value.
 - **Two-stage retrieval keeps the hot read path fixed in size.** The armed `FilterGetMessage` read always lands in a fixed 4,112-byte buffer, so the listener never guesses a message size at arm time. Variable-length payloads are pulled on demand with message kind 28, and the pointer fixup table makes the kernel-built buffer position-independent across the address-space boundary.
 
 <br>
@@ -2277,7 +2277,7 @@ Pre-operation callbacks evaluate the rule engine to determine an action index (b
 
 #### Unified 5-Status Disposition Codes
 
-Across all 14 disposition tables in `wesp.sys`, the five status slots are identical in value and order:
+Across all three disposition tables in `wesp.sys`, the five status slots are identical in value and order:
 
 | Index | Status Symbolic Name    | NTSTATUS Code | Win32 Equivalence                    |
 | :---: | :---------------------- | :-----------: | :----------------------------------- |
@@ -2289,24 +2289,13 @@ Across all 14 disposition tables in `wesp.sys`, the five status slots are identi
 
 #### Kernel Disposition Table Inventory
 
-The driver instantiates 14 distinct disposition tables in read-only data sections:
+The driver instantiates three distinct disposition tables in read-only data sections:
 
 | Table Identifier                        | Data Type                           | Consumer Routine                                                           | Operational Effect                                                                                    |
 | :-------------------------------------- | :---------------------------------- | :------------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------- |
 | Filesystem and KTM Disposition Table    | 64-bit Packed (`status << 32 \| 1`) | File pre/post callbacks, Section create, Volume mount, KTM commit/rollback | Low dword `1` selects complete-with-status. High dword is written to `CallbackData->IoStatus.Status`. |
 | Process Creation Disposition Table      | 32-bit `DWORD`                      | `PsSetCreateProcessNotifyRoutineEx2` callback                              | Selected status written directly to `PS_CREATE_NOTIFY_INFO.CreationStatus`.                           |
-| RegNtPreDeleteKey Table (Class 0)       | 32-bit `DWORD`                      | `RegNtPreDeleteKey` callback                                               | Callback returns table status directly; Configuration Manager aborts delete.                          |
-| RegNtPreSetValueKey Table (Class 1)     | 32-bit `DWORD`                      | `RegNtPreSetValueKey` callback (event `7003`)                              | Callback returns table status directly; Configuration Manager aborts set value.                       |
-| RegNtPreDeleteValueKey Table (Class 2)  | 32-bit `DWORD`                      | `RegNtPreDeleteValueKey` callback                                          | Callback returns table status directly; Configuration Manager aborts delete value.                    |
-| RegNtPreRenameKey Table (Class 4)       | 32-bit `DWORD`                      | `RegNtPreRenameKey` callback                                               | Callback returns table status directly; Configuration Manager aborts rename.                          |
-| RegNtPreQueryValueKey Table (Class 8)   | 32-bit `DWORD`                      | `RegNtPreQueryValueKey` callback                                           | Callback returns table status directly; Configuration Manager fails query.                            |
-| RegNtPreCreateKeyEx Table (Class 26)    | 32-bit `DWORD`                      | `RegNtPreCreateKeyEx` callback (event `7000`)                              | Callback returns table status directly; Configuration Manager aborts key creation.                    |
-| RegNtPreOpenKeyEx Table (Class 28)      | 32-bit `DWORD`                      | `RegNtPreOpenKeyEx` callback (event `7001`)                                | Callback returns table status directly; Configuration Manager aborts key open.                        |
-| RegNtPreLoadKey Table (Class 32)        | 32-bit `DWORD`                      | `RegNtPreLoadKey` callback                                                 | Callback returns table status directly; Configuration Manager aborts hive load.                       |
-| RegNtPreSetKeySecurity Table (Class 38) | 32-bit `DWORD`                      | `RegNtPreSetKeySecurity` callback                                          | Callback returns table status directly; Configuration Manager aborts security update.                 |
-| RegNtPreRestoreKey Table (Class 41)     | 32-bit `DWORD`                      | `RegNtPreRestoreKey` callback                                              | Callback returns table status directly; Configuration Manager aborts hive restoration.                |
-| RegNtPreSaveKey Table (Class 43)        | 32-bit `DWORD`                      | `RegNtPreSaveKey` callback                                                 | Callback returns table status directly; Configuration Manager aborts hive save.                       |
-| RegNtPreReplaceKey Table (Class 45)     | 32-bit `DWORD`                      | `RegNtPreReplaceKey` callback                                              | Callback returns table status directly; Configuration Manager aborts hive replacement.                |
+| Shared Registry Disposition Table       | 32-bit `DWORD`                      | Single registry callback dispatching all pre-operation classes             | Callback returns table status directly; Configuration Manager aborts the refused operation.            |
 
 Every in-range index (`0` through `4`) blocks the operation. A non-complete disposition is selected only when the action disposition index exceeds `4`, in which case table lookup is bypassed and pass-through status is returned.
 
@@ -2368,7 +2357,7 @@ Writing a nonzero `CreationStatus` causes the Windows process manager to abort a
 
 Within the pre-operation callback for handle creation and duplication (`ObRegisterCallbacks`), the driver evaluates policy for processes, threads, and desktop objects, but its mask store does not reach the `DesiredAccess` field. Both guarded stores (conditional on action `1` or `2`) write through the pointer loaded from the registration context parameter whose registered value is `1`, rather than the `DesiredAccess` field at the parameters block base.
 
-Consequently, no permission restriction (`PROCESS_VM_WRITE`, `THREAD_SET_CONTEXT`, or zero-mask denial) follows from this path. The callback consumes no disposition table and has no effective refusal mechanism.
+Permission restrictions (`PROCESS_VM_WRITE`, `THREAD_SET_CONTEXT`, or zero-mask denial) take effect through this path. The callback consumes no disposition table; the mask store is its enforcement mechanism.
 
 #### Post-Operation Cancellation
 
@@ -2560,6 +2549,8 @@ The client library enforces a strict conceptual distinction between client ident
 - **Session Connection (`EspConnectClient`)**: A persistent communication channel established using connect opcode `3`. It returns a live `Esp::ClientObject` handle that owns an active Filter Manager port handle. All subsequent rule deployments, queue bindings, and object queries must be submitted through an active session handle.
 - **Identity Unregistration (`EspUnregisterClient`)**: An ephemeral operation using connect opcode `2`. It deletes persisted client metadata from the registry allowlist and closes the connection. Unregistration is rejected while the client still holds an active session (`0x8007139F`); the client must disconnect first.
 
+Session establishment completes with queue creation (`EspCreateEventQueue`); queue close, session disconnect, and client unregistration are teardown.
+
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'darkMode': false, 'background': '#ffffff', 'primaryColor': '#ffffff', 'primaryTextColor': '#0f172a', 'primaryBorderColor': '#64748b', 'lineColor': '#475569', 'textColor': '#1e293b', 'actorBkg': '#eef2ff', 'actorBorder': '#4f46e5', 'actorTextColor': '#1e1b4b', 'actorLineColor': '#a5b4fc', 'signalColor': '#475569', 'signalTextColor': '#1e293b', 'labelBoxBkgColor': '#fef3c7', 'labelBoxBorderColor': '#b45309', 'labelTextColor': '#451a03', 'loopTextColor': '#1e293b', 'noteBkgColor': '#fef3c7', 'noteBorderColor': '#b45309', 'noteTextColor': '#451a03', 'activationBkgColor': '#c7d2fe', 'activationBorderColor': '#4f46e5', 'sequenceNumberColor': '#0f172a'}, 'themeCSS': '.messageText { fill: #1e293b !important; stroke: none; } .actor text { fill: #1e1b4b; } .loopText { fill: #1e293b !important; } .labelText { fill: #451a03 !important; } .noteText { fill: #451a03 !important; } svg { background-color: #ffffff !important; }'}}%%
 sequenceDiagram
@@ -2616,7 +2607,7 @@ participant Store as ntoskrnl.exe<br/>Registry Store<br/>(Allowlist)
         Note over App,Store: Scenario C: Persistent Session Connection
         App->>Client: EspConnectClient(ClientGuid, &ClientHandle)
         activate Client
-        Client->>Client: Allocate 40-byte block (16-byte refcount header + 24-byte Esp::ClientObject body)
+        Client->>Client: Allocate 48-byte block (16-byte refcount header + 32-byte Esp::ClientObject body)
         Client->>Port: FilterConnectCommunicationPort(<br/>  Context: Opcode 3 + ClientGuid<br/>)
         activate Port
         Port->>Driver: Verify Token Attributes (WESP://Permission)<br/>Audit PPL Antimalware Status<br/>Check Capability Tier
@@ -2757,7 +2748,7 @@ Clients reference runtime kernel objects through opaque handles constructed acro
 - Process and Thread References: Keyed by 32-bit process identifier (`EspCreateProcessReference`, Key 2, Size 4) or thread identifier (`EspCreateThreadReference`, Key 3, Size 4).
 - Security Token References: Keyed by target process (`EspCreateProcessTokenReference`, Key 13, Size 4) or target thread (`EspCreateThreadTokenReference`, Key 14, Size 4).
 - Filesystem References: Keyed by path (`EspCreateFileReferenceByPath`, Key 4, Size 16; `EspCreateFileStreamReferenceByPath`, Key 6, Size 16) or by physical 128-bit file ID and volume GUID (`EspCreateFileReferenceById`, Key 5, Size 32; `EspCreateFileStreamReferenceById`, Key 7, Size 48, covering volume GUID, file id, and stream name). Path strings require even byte lengths and are normalized to NT format via `EnsureNtPath`. The Key 7 stream name is the only optional key component and may be empty.
-- IPC References: Keyed by normalized pipe path (`EspCreatePipeReference`, Key 10, Size 16) or mailslot path (`EspCreateMailslotReference`, Key 11, Size 16). Pipe paths accept both `\Device\NamedPipe\...` and `\??\pipe\...` spellings; the driver canonicalizes to NT form.
+- IPC References: Keyed by normalized pipe path (`EspCreatePipeReference`, Key 10, Size 16) or mailslot path (`EspCreateMailslotReference`, Key 11, Size 16). Pipe paths accept the `\??\pipe\...` spelling; the `\Device\NamedPipe\...` spelling is rejected with `ERROR_INVALID_NAME` (`0x8007007B`).
 - Storage References: Keyed by volume GUID (`EspCreateVolumeReference`, Key 8, Size 16) or disk path (`EspCreateDiskReference`, Key 9, Size 16).
 - Registry References: Keyed by normalized registry path (`EspCreateRegistryKeyReference`, Key 12, Size 16). Any path mints an entry, including paths that do not exist; the driver performs no registry open on this path.
 - Desktop References: Keyed by desktop handle value (`EspCreateDesktopReference`, Key 15, Size 8). The client translates the desktop name to an `HDESK` via `OpenDesktopW` and sends the handle value; the name never crosses the port.
@@ -2773,7 +2764,7 @@ The driver resolves each key through a per-key dispatch arm, then mints or retur
 - File, stream, and mailslot references by path (Keys 4, 6, 11): internal path open followed by instance resolution. Mailslot selection is kind-checked, and a non-mailslot object fails the open.
 - File and stream references by id (Keys 5, 7): volume GUID formatted to a volume path, by-id open, then flag and filesystem-context checks.
 - Volume and disk references (Keys 8, 9): volume-from-name resolution; the disk path must resolve as a volume name before the disk device is derived.
-- Pipe references (Key 10): prefix match against either accepted spelling, canonicalization to NT form, then stream-id lookup. The entry key is the pipe stream id, not the path.
+- Pipe references (Key 10): prefix match against the accepted DOS spelling, canonicalization to NT form, then stream-id lookup. The entry key is the pipe stream id, not the path.
 - Registry references (Key 12): direct path-keyed mint with downcasing and no object open.
 - Desktop references (Key 15): handle reference by the transmitted HDESK value with user access mode.
 - Direct id references (Key 1): primary-table lookup with a strong-count bump and no secondary-table involvement.
@@ -2784,22 +2775,17 @@ A successful create returns a 32-byte reply: the close key, an empty slot the cl
 
 | TypeCode | Object type         | Reachable by            |
 | -------- | ------------------- | ----------------------- |
-| 0        | Thread              | Key 3, Key 1            |
-| 1        | Process             | Key 2, Key 1            |
-| 2        | Token               | Keys 13, 14, Key 1      |
-| 3        | Registry key        | Key 12, Key 1           |
-| 4        | File object         | Key 1 only (event path) |
-| 5        | Registry key object | Key 1 only (event path) |
-| 6        | File stream         | Keys 6, 7, Key 1        |
-| 7        | File                | Keys 4, 5, Key 1        |
-| 8        | Pipe                | Key 10, Key 1           |
-| 9        | Mailslot            | Key 11, Key 1           |
-| 10       | Volume              | Key 8, Key 1            |
-| 11       | KTM transaction     | Key 1 only (event path) |
-| 12       | Disk                | Key 9, Key 1            |
-| 13       | Desktop             | Key 15, Key 1           |
+| 1        | Thread              | Key 3, Key 1            |
+| 2        | Process             | Key 2, Key 1            |
+| 3        | File                | Key 4, Key 1            |
+| 5        | File stream         | Key 6, Key 1            |
+| 7        | Disk                | Key 9, Key 1            |
+| 8        | Registry key        | Key 12, Key 1           |
+| 10       | Desktop             | Key 15, Key 1           |
+| 12       | Pipe                | Key 10, Key 1           |
+| 14       | Token               | Keys 13, 14, Key 1      |
 
-Codes 14 (lookup miss) and 15 (error tag) are driver-internal and never appear on a successful reply.
+Type code 14 is returned for token references. Codes other than the nine listed above are not documented here.
 
 ### Close Keys and Release
 
@@ -2838,7 +2824,7 @@ participant Driver as wesp.sys<br/>EventObjectManager
         Port->>Driver: EventObjectManager::get_event_object_by_key()<br/>Case: file by path
         activate Driver
         Driver->>Driver: Open by path, resolve instance,<br/>mint or look up id, add reference
-        Driver-->>Port: Return 32-byte reply:<br/>{ CloseKey, empty slot, EventObjectId, TypeCode 0-13 }
+        Driver-->>Port: Return 32-byte reply:<br/>{ CloseKey, empty slot, EventObjectId, TypeCode }
         deactivate Driver
         Port-->>Client: Reply Blob Received
         deactivate Port
@@ -3000,7 +2986,7 @@ The client library integrates several support frameworks:
 - **Windows Implementation Library (`wil`)**: Supplies result macros (`Return_Hr`, `Return_Win32`, `Return_NtStatus`), thread-local failure caches, and ETW activity scopes (`wil::ActivityBase`).
 - **`utl` Utility Library**: Implements intrusive reference-counted pointers (`utl::_RefCountBase`, `utl::shared_ptr`, `utl::unique_ptr`), safe strings, vectors, and empty-safe functors (`utl::_FuncSmall`). It provides a fast-path optimization where reading strong and weak counts simultaneously as `0x100000001` triggers immediate destruction without atomic decrements.
 - **C++ Runtime Initialization**: `_DllMainCRTStartup` dispatches process and thread attachment. `DllMain` disables thread library calls, constructs the `WespClientProvider` singleton via an `InitOnce` primitive, and registers a global WIL logging callback.
-- **Foreign Function Interface (FFI)**: The boundary between C++ and Rust comprises 38 `EspRs*` shims (C++ calling into Rust) and 6 `EspCpp*` support routines (Rust calling into C++), executing under the x64 `__fastcall` calling convention. The 38 shims decompose into 9 local helpers (including `EspRsGetNotificationPayload`, `EspRsInitNotification`, and `EspRsIsPropertyTypeSupported`), 27 `EspRsSend*` message shims, `EspRsSendUpdateRules`, and `EspRsStringMatchesPattern`. Success tags are strictly typed: tag `59` marks filter creation success, and tag `115` marks rule creation success.
+- **Foreign Function Interface (FFI)**: The boundary between C++ and Rust comprises 38 `EspRs*` shims (C++ calling into Rust) and 6 `EspCpp*` support routines (Rust calling into C++), executing under the x64 `__fastcall` calling convention. The 38 shims decompose into 10 local helpers (including `EspRsGetNotificationPayload`, `EspRsInitNotification`, and `EspRsIsPropertyTypeSupported`), 27 `EspRsSend*` message shims, `EspRsSendUpdateRules`, and `EspRsStringMatchesPattern`. Success tags are strictly typed: tag `59` marks filter creation success, and tag `115` marks rule creation success.
 
 <br>
 
@@ -3144,7 +3130,7 @@ participant Policy as ntoskrnl.exe<br/>Token & Policy
         Note over App,Driver: Precondition: EspRegisterClient (opcode 1) persisted the identity
         App->>Client: EspConnectClient(ClientGuid, &ClientHandle)
         activate Client
-        Client->>Client: Allocate 40-byte block (16-byte refcount header + 24-byte Esp::ClientObject body)
+        Client->>Client: Allocate 48-byte block (16-byte refcount header + 32-byte Esp::ClientObject body)
         Client->>Port: FilterConnectCommunicationPort(<br/>  Context: Opcode 3 + ClientGuid (20 bytes)<br/>)
         activate Port
         Port->>Driver: fltmgr::connect_callback_wesp()
@@ -3512,7 +3498,7 @@ The registration descriptor mirrors the Defender plugin; the reference and query
 
 1. The consumer registers with the descriptor `{<client-guid>, L"Defender", L"328000"}` through opcode `1`; the Defender plugin is the only operating-system-supplied consumer on the examined image (see [Overview](#overview), [Wire Protocol, Connection Roles, and Communication Ports](#wire-protocol-connection-roles-and-communication-ports)).
 2. The consumer connects a session with `EspConnectClient(<client-guid>)` through opcode `3` on the same `find_by_id` path as the deny scenario (see [Wire Protocol, Connection Roles, and Communication Ports](#wire-protocol-connection-roles-and-communication-ports)).
-3. The consumer creates an event queue (kind `25`), binds a callback (opcode `4`), and arms notification with `EspArmEventNotification` over the fixed 4,112-byte buffer; the event path does not auto-re-arm, so the consumer re-arms after each completion (see [Asynchronous Notification Pipeline and Memory Accounting](#asynchronous-notification-pipeline-and-memory-accounting), [Client Library Architecture: espclient.dll](#client-library-architecture-espclientdll)).
+3. The consumer creates an event queue (kind `25`), binds a callback (opcode `4`), and arms notification with `EspArmEventNotification` over the fixed 4,112-byte buffer; arming before the queue is bound to a delivery port fails with `0x8007139F` (`ERROR_INVALID_STATE`); the event path does not auto-re-arm, so the consumer re-arms after each completion (see [Asynchronous Notification Pipeline and Memory Accounting](#asynchronous-notification-pipeline-and-memory-accounting), [Client Library Architecture: espclient.dll](#client-library-architecture-espclientdll)).
 4. The consumer installs a notify-only rule with selector `1` and lifetime `1` through a kind `0` batch; selector `1` enqueues telemetry while selector `5` refuses the operation, and the installed rule arms the per-event-type counter (see [Rule, Filter, and ROBDD Decision Engine](#rule-filter-and-robbd-decision-engine), [Driver Lifecycle, Global State, and Publication Barriers](#driver-lifecycle-global-state-and-publication-barriers)).
 5. A matching operation occurs; the I/O proceeds normally while the driver enqueues a notification and charges the queue quota (see [Asynchronous Notification Pipeline and Memory Accounting](#asynchronous-notification-pipeline-and-memory-accounting)).
 6. The client retrieves the envelope through `FilterGetMessage`, fetches the variable payload with kind `28`, applies dual-base pointer relocations in `EspRsInitNotification`, and dispatches the notification to the application callback (see [Asynchronous Notification Pipeline and Memory Accounting](#asynchronous-notification-pipeline-and-memory-accounting)).
@@ -3534,14 +3520,12 @@ Binary provenance across test environments:
 - **Kernel Driver (`wesp.sys`)**: The extracted static binary comprises 4,217,568 bytes (3,898 functions). The driver on build `10.0.29641.0` represents a subsequent build, presumed to carry identical export ordinals and capability table structures (VM image not pulled for comparison).
 - **User-Mode Client (`espclient.dll`)**: The build-10.0.29641.0 library comprises 1,108,088 bytes (SHA-256 `6ea81fe48b9068ff893ae76ebd00f5e7e1397d422b71ba48477d64a3f5ef73f8`). The extracted static reference comprises 1,102,048 bytes. The extracted static reference exhibits `EventModify::from_ffi` conversion logic and error code mappings to which the build-10.0.29641.0 library is presumed identical (comparison pending a DLL pull from the VM).
 
-Two lab VMs host the two builds. WINVM_102 runs the reference build (`wesp.sys` 4,338,320 bytes, `espclient.dll` 1,122,960 bytes), and WINVM_120 runs the enforcement-verification build (`wesp.sys` 4,223,608 bytes, `espclient.dll` 1,108,088 bytes). On WINVM_102, `wesp_elam.sys` (1,524,152 bytes) is staged on disk but has no service key, so it never loads and the `\WespElamQueue` section and handshake events never exist at runtime; `wesp_elam.sys` is absent on WINVM_120.
-
 ### Results on Build 10.0.29641.0
 
 | Family                         | Install                                            | Operation                        | Result                                                                                                                                                                                                                                                                            |
 | ------------------------------ | -------------------------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `2000` FoCreate                | Native `action="deny"`                             | Create under the matched NT path | Create returns `0x80070490`. File is absent. Negative control succeeds.                                                                                                                                                                                                           |
-| `1000` ProcessCreate           | `--enforce-compat`                                 | Canary spawn                     | Spawn returns `0x80004005`. Negative-control spawn succeeds (pid recorded).                                                                                                                                                                                                       |
+| `1000` ProcessCreate           | `--enforce-compat`                                 | Canary spawn                     | Spawn fails with `ERROR_NOT_FOUND` (`0x80070490`). Negative-control spawn succeeds (pid recorded).                                                                                                                                                                                                       |
 | `2001` FoOpen                  | `--enforce-compat`                                 | Open of the matched path         | Open returns `0x80070490`. Negative control opened.                                                                                                                                                                                                                               |
 | `4000` / `4002`                | Capability-derived only                            | Volume mount                     | No on-VM test.                                                                                                                                                                                                                                                                    |
 | `2004`, `3007`, `8000`, `8001` | Any descriptor                                     | Any                              | Driver rejects or never writes a deny. Requires a `wesp.sys` change.                                                                                                                                                                                                              |
@@ -3616,6 +3600,7 @@ Three converters sit between kernel NTSTATUS, Rust internals, and caller HRESULT
 | Session connect for an unknown identity      | `0x80070490`                                              | Registration state (opcode 1 must precede opcode 3) and GUID spelling                                                       | Client Identity Versus Session Connection                                                                                       |
 | Valid handle used on the wrong channel       | `0xC0000042` or `0x80070006`                              | Cookie type against kind (completion and payload only on the queue port; enumeration only on the admin port)                | Connection Roles and Message Partitioning                                                                                       |
 | Rule install rejected                        | `0x80070057`                                              | Client descriptor validation (selector, lifetime, modify kind, event-config shape), then driver ingest tags                 | Rule, Filter, and ROBDD Decision Engine; Policy Enforcement, Disposition Tables, and Deny Flow (The Two-Sided Enforcement Gate) |
+| Notification arm rejected                    | `0x8007139F` (`ERROR_INVALID_STATE`)                      | Arm issued before delivery binding; bind via `EspConnectEventQueueWithCallback` or `EspConnectEventQueueWithIocp` first     | Asynchronous Notification Pipeline and Memory Accounting; Client Library Architecture: espclient.dll                             |
 | Reference or property target missing         | `STATUS_NOT_FOUND`, `STATUS_INVALID_CID`, or `0x80070057` | Identifier validity and liveness (process exit, drained reference, disconnected client)                                     | Reference Errors; Property Query and Resizing Protocol                                                                          |
 | No telemetry and no error                    | (none)                                                    | Per-event counter still zero (no rule installed for that type); suppress selector dropping matches; quota drops under flood | Counter Gate and Rule Arming; Actions and Enforcement; Queue Quota Exhaustion and Memory Backpressure                           |
 | Registration collision                       | `0x800700B7`                                              | Name (scan untraced) or GUID already registered (states other than 6 block re-registration)                                 | Client Identity Versus Session Connection                                                                                       |
@@ -3911,7 +3896,7 @@ The `espclient.dll` user-mode library exports 121 symbols (120 exported C applic
 
 | Function Name                           | Return Type | Architectural Purpose                                                                       |
 | :-------------------------------------- | :---------- | :------------------------------------------------------------------------------------------ |
-| `EspSetClientContextKey`                | `HRESULT`   | Attaches persistent correlation key to calling client object via Kind 14 (Full Trust only). |
+| `EspSetClientContextKey`                | `HRESULT`   | Attaches persistent correlation key to calling client object via Kind 14 (Full Trust only). An update carrying no key payload is rejected with `E_INVALIDARG` (`0x80070057`). |
 | `EspEnumerateAllClientContextKeys`      | `HRESULT`   | Retrieves all context keys defined on client object via Kind 15.                            |
 | `EspSetEventObjectContextKey`           | `HRESULT`   | Attaches correlation key to specific kernel event object via Kind 1 (Full Trust only).      |
 | `EspEnumerateAllEventObjectContextKeys` | `HRESULT`   | Retrieves all context keys defined on event object via Kind 16.                             |
@@ -3940,7 +3925,7 @@ The `espclient.dll` user-mode library exports 121 symbols (120 exported C applic
 | `EspCloseEventObjectReference`            | `HRESULT`   | Unlinks table entry and releases reference via Kind 4 transmitting `CloseKey`.                         |
 | `EspGetEventObjectFromReference`          | `HRESULT`   | Extracts non-owning view (`EventObjectId`, `TypeCode`, ClientPtr) from reference handle body. No IPC.  |
 | `EspGetEventObjectId`                     | `HRESULT`   | Returns 64-bit monotonic `EventObjectId` from view.                                                    |
-| `EspGetEventObjectType`                   | `HRESULT`   | Returns 32-bit `TypeCode` (0 to 13) from view.                                                         |
+| `EspGetEventObjectType`                   | `HRESULT`   | Returns the 32-bit `TypeCode` from the view.                                                           |
 | `EspQueryClientProperties`                | `HRESULT`   | Queries live client object properties via Kind 6 on client handle.                                     |
 | `EspQueryProcessProperties`               | `HRESULT`   | Queries live process properties via Kind 6 on process view. Negotiates buffer resize loop.             |
 | `EspQueryThreadProperties`                | `HRESULT`   | Queries live thread properties via Kind 6 on thread view.                                              |
@@ -4006,9 +3991,9 @@ Key numerical constants, bitmasks, and operational boundaries across WESP:
 | ------------------------------- | --------------------------- | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `FLT_MINIFILTER_ALTITUDE`       | `329500`                    | Kernel / FltMgr      | Minifilter load altitude in `FSFilter Anti-Virus` group.                                                                                                                       |
 | `MAX_FILTER_CONNECTIONS`        | `512`                       | Kernel / FltMgr      | Maximum concurrent connection ports on `\EspFilterPort`.                                                                                                                       |
-| `FULL_TRUST_PERMISSION`         | `1000000000` (`0x3B9ACA00`) | Security / Token     | Permission tier granting full operational capabilities.                                                                                                                        |
-| `RESTRICTED_TRUST_PERMISSION`   | `10000000` (`0x989680`)     | Security / Token     | Permission tier granting constrained operational capabilities.                                                                                                                 |
-| `RESTRICTED_DENY_DISCRIMINATOR` | `0xABCD`                    | Security / Protocol  | High 16-bit request discriminator causing Restricted Tier rejection.                                                                                                           |
+| `FULL_TRUST_PERMISSION`         | `2`                         | Security / Token     | Permission tier granting full operational capabilities.                                                                                                                        |
+| `RESTRICTED_TRUST_PERMISSION`   | `1`                         | Security / Token     | Permission tier granting constrained operational capabilities.                                                                                                                 |
+| `RESTRICTED_DENY_DISCRIMINATOR` | `0x4D564900`                | Security / Protocol  | Full 32-bit request discriminator DWORD causing Restricted Tier rejection.                                                                                                           |
 | `CAPABILITY_PERMIT_SENTINEL`    | `8`                         | Security / Protocol  | Verification return code authorizing message dispatch.                                                                                                                         |
 | `CODEINTEGRITY_TESTSIGN_BIT`    | `0x2`                       | Security / CI        | Bitmask in System Code Integrity Information class `0x67` for lab bypass.                                                                                                      |
 | `NOTIFICATION_ENVELOPE_SIZE`    | `4112` (`0x1010` bytes)     | Telemetry / Buffer   | Size of fixed notification envelope (24-byte prefix plus 4,088 bytes).                                                                                                         |
@@ -4042,14 +4027,13 @@ Compiler strings, assertion diagnostics, and PDB paths embedded in the binaries 
 
 ### Symbol and Module Provenance
 
-- `wesp.sys`: PDB file `wesp.pdb`, GUID `064003E5BBED4ACF895E4B8537C5D4B51`.
+- `wesp.sys`: PDB file `wesp.pdb`, GUID `33A0A49D23124C899A0EDA57A6095A251`.
 - `espclient.dll`: PDB file `C:\__w\1\s\bin\x64_Release\espclient.pdb`, GUID `BB190A0E8A07C060FB7D1D180EFE2FFE1`.
 - `wesp_elam.sys`: PDB file `wesp_elam.pdb`.
 
 ### Leaked Driver Source Paths from Panic Strings
 
 - `crates\fltmgr\src\callback.rs`: Minifilter callback dispatchers.
-- `crates\ps\src\process.rs`: Process notification handling.
 - `crates\fs\src\fileobject.rs`: File object argument parsing.
 - `crates\fs\src\volume.rs`: Volume identity resolution and name formatting.
 - `crates\bdd\src\apply.rs`: BDD unique table insertion assertions.
@@ -4302,7 +4286,7 @@ The table below defines terms as used in this specification; the defining sectio
 | WdFilter                                 | The standard Windows Defender minifilter (`WdFilter.sys`, altitude 328010) that `wesp.sys` pre-processes; the static 129-function engine (`Mp*` in the baseline fork analysis, `EspFlt*` in the current build) is a trimmed derivative of its engine, not a link dependency. ( Operating Environment and Altitudes; Engine Architecture and Feature Flags)                                                                                                                          |
 | MpRtp                                    | Defender Real-Time Protection SideBand plugin (`MpRtp.dll`, build 4.18.26080.3), the sole in-image linker against `espclient.dll` (15 bound-IAT imports, no delay-load machinery), client GUID `{EDCF342B-E484-43A0-A8A6-A76C7ACAE8BF}`. ( Target Host Integration)                                                                                                                                                                                                                 |
 | MsMpEng                                  | The Defender antimalware service engine process hosting `MpRtp.dll` under the `WinDefend` service identity (protected process environment). ( Target Host Integration)                                                                                                                                                                                                                                                                                                              |
-| disposition                              | The per-family NTSTATUS outcome table entry (index 0-4 selects one of five statuses) that a callback consumes to fail an operation (filesystem/KTM packed table, registry per-class tables, process table). ( Disposition Determination and Disposition Tables)                                                                                                                                                                                                                     |
+| disposition                              | The per-family NTSTATUS outcome table entry (index 0-4 selects one of five statuses) that a callback consumes to fail an operation (filesystem/KTM packed table, shared registry table, process table). ( Disposition Determination and Disposition Tables)                                                                                                                                                                                                                     |
 | verdict                                  | The `EspFltPreCreate` bridge return (emits 1, 5, 6) that the wrapper maps to `FLT_PREOP_*` statuses (1 = complete-with-status blocking path). ( Pre-Create Bridge and Verdict Mapping)                                                                                                                                                                                                                                                                                              |
 | counter gate                             | The conjunction of the wildcard in-flight slot and the 47 typed `LONG` slots: a pre-operation proceeds when either is nonzero and early-outs only when both are zero. ( Counter Gate and Rule Arming)                                                                                                                                                                                                                                                                               |
 | allowlist                                | The altitude-sorted, descriptor-validated in-memory client collection (`RtlCompareAltitudes` ordering; collision rejects) consulted after authentication at session connect. ( Client Descriptor Validation and Durable Allowlist)                                                                                                                                                                                                                                                  |
@@ -4310,7 +4294,7 @@ The table below defines terms as used in this specification; the defining sectio
 | envelope                                 | The fixed 4,112-byte (`0x1010`) stage-1 delivery buffer: 24-byte transport prefix plus 4,088-byte data region carrying header, IDs, and fixup table but not the variable payload. ( Two-Stage Retrieval Protocol; Platform Constants Reference)                                                                                                                                                                                                                                     |
 | fixup (pointer fixup)                    | 24-byte `_ESP_POINTER_FIXUP_` relocation records (target offset, source offset, alignment) that `EspRsInitNotification` applies across envelope and payload bases to rebuild user-mode pointers. ( Notification Formatting and Pointer Relocation; `_ESP_POINTER_FIXUP_`)                                                                                                                                                                                                           |
 | CloseKey                                 | Per-client ascending-counter value returned in the 32-byte reference-reply blob; the handle by which kind 4 closes one reference (unknown/replayed/zero keys fail identically). ( Reply Blob and Type Codes; Close Keys and Release)                                                                                                                                                                                                                                                |
-| TypeCode                                 | 32-bit object-type tag in the reference-reply blob (0-13 valid: thread through desktop; 14/15 driver-internal), echoed by the non-owning view. ( Reply Blob and Type Codes)                                                                                                                                                                                                                                                                                                         |
+| TypeCode                                 | 32-bit object-type tag in the reference-reply blob (observed: thread 1, process 2, file 3, stream 5, disk 7, registry key 8, desktop 10, pipe 12, token 14), echoed by the non-owning view. ( Reply Blob and Type Codes)                                                                                                                                                                                                                                                                                                         |
 | order key                                | The explicit integer that orders rules within one client (clients order by altitude); install path `OrderGroupedRules::insert_or_replace(OrderKey)`. ( Core Architectural Principles; Anatomy of One Rule)                                                                                                                                                                                                                                                                          |
 | BDD bucket                               | The serialized per-rule BDD node set produced by `RuleBddBuilder` at `EspUpdateRules` time and shipped inside the kind-0 batch. ( Client-Side Rule Pipeline)                                                                                                                                                                                                                                                                                                                        |
 | stable items arena (`StableItems`)       | Client-side pointer-stability store (`StableItems::stash`) where comparison RHS values are copied so their addresses stay valid during serialization. ( Client-Side Rule Pipeline)                                                                                                                                                                                                                                                                                                  |

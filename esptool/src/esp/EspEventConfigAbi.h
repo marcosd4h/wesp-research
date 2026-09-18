@@ -122,10 +122,11 @@ static_assert(kImageLoadFileObjectFilterOffset == 400);
 // constructible for the driver-ready set. SupportsEnforcePayload accepts
 // FoCreate and every enforce-compat event type. 8000 and 8001 stay false because
 // their live-recorded capability record 0x19 has bit 0x02 clear; 3007 stays false
-// because its class has no filesystem disposition; 5000 and 6000 stay false
-// because their callbacks do not write a disposition; 9000 stays false because it
-// has no capability record on this build and no disposition callback either; and
-// 2004 stays false because its capability mask 0x09 has bit 0x02 clear.
+// because its live record 0x19 has bit 0x02 clear and its class has no
+// filesystem disposition; 5000 and 6000 stay false because their callbacks do
+// not write a disposition; 9000 stays false because its live record 0x07 has no
+// disposition callback either; and 2004 stays false because its capability mask
+// 0x09 has bit 0x02 clear.
 [[nodiscard]] constexpr bool SupportsEnforcePayload(
     std::uint32_t event_type) noexcept {
   return event_type == kEventFoCreate || IsEnforceCompatEventType(event_type);

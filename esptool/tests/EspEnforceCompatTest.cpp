@@ -50,11 +50,11 @@ TEST_CASE("IsEnforceCompatEventType rejects excluded and non-driver types") {
   // Object-manager pair: capability record 0x19 has bit 0x02 clear.
   CHECK_FALSE(IsEnforceCompatEventType(8000));
   CHECK_FALSE(IsEnforceCompatEventType(8001));
-  // FileQueryOpen is inside the capability range 3000..3008 but its class has
-  // no FS disposition, so the second condition excludes it.
+  // FileQueryOpen live record 0x19 has bit 0x02 clear and its class has
+  // no FS disposition, so both conditions exclude it.
   CHECK_FALSE(IsEnforceCompatEventType(3007));
-  // 5000/6000 have bit 0x02 set but no pre-operation DENY callback; 9000 has no
-  // capability record on this build.
+  // 5000/6000 have bit 0x02 set but no pre-operation DENY callback; 9000 has
+  // live mask 0x07 yet no DENY callback, so condition (2) excludes it.
   CHECK_FALSE(IsEnforceCompatEventType(5000));
   CHECK_FALSE(IsEnforceCompatEventType(6000));
   CHECK_FALSE(IsEnforceCompatEventType(9000));
@@ -91,12 +91,13 @@ TEST_CASE(
   CHECK(DriverEventCapabilityMask(2000) == 0x1B);
   CHECK(DriverEventCapabilityMask(7000) == 0x1B);
   CHECK(DriverEventCapabilityMask(7001) == 0x1B);
-  // mask 0x0B -> 2002, 2003, 3000..3008, 4000, 4002, 5000, 6000, 7002..7014
+  // mask 0x0B -> 2002, 2003, 3000..3006, 3008, 4000, 4002, 5000, 6000, 7002..7014
+  // (3007 is 0x19 live, see below)
   CHECK(DriverEventCapabilityMask(2002) == 0x0B);
   CHECK(DriverEventCapabilityMask(2003) == 0x0B);
   for (std::uint32_t type = 3000; type <= 3008; ++type) {
     CAPTURE(type);
-    CHECK(DriverEventCapabilityMask(type) == 0x0B);
+    CHECK(DriverEventCapabilityMask(type) == (type == 3007 ? 0x19 : 0x0B));
   }
   CHECK(DriverEventCapabilityMask(4000) == 0x0B);
   CHECK(DriverEventCapabilityMask(4002) == 0x0B);
@@ -109,16 +110,20 @@ TEST_CASE(
   // mask 0x09 (bit 0x02 CLEAR) -> 2004, 3009
   CHECK(DriverEventCapabilityMask(2004) == 0x09);
   CHECK(DriverEventCapabilityMask(3009) == 0x09);
-  // mask 0x19 (bit 0x02 CLEAR) -> the object-manager pair. Live-recorded:
-  // ObCreateHandle reads `40 1f 00 00 19 00 00 00`, so the pair has a real
-  // record whose enforce-capable bit is clear.
+  // mask 0x19 (bit 0x02 CLEAR) -> 3007 plus the object-manager pair.
+  // Live-recorded: 3007={type 3007, caps 0x19, extra 0x01}; ObCreateHandle reads
+  // `40 1f 00 00 19 00 00 00`, so each has a real record whose enforce-capable
+  // bit is clear.
+  CHECK(DriverEventCapabilityMask(3007) == 0x19);
   CHECK(DriverEventCapabilityMask(8000) == 0x19);
   CHECK(DriverEventCapabilityMask(8001) == 0x19);
+  // mask 0x07 (bit 0x02 SET) -> 9000. Live read 9000={type 9000, caps 0x07,
+  // extra 0x00}. Excluded from the compat set via no-disposition-callback.
+  CHECK(DriverEventCapabilityMask(9000) == 0x07);
   // No capability record on this build.
   CHECK(DriverEventCapabilityMask(3010) == 0);
   CHECK(DriverEventCapabilityMask(3011) == 0);
   CHECK(DriverEventCapabilityMask(4001) == 0);
-  CHECK(DriverEventCapabilityMask(9000) == 0);
   CHECK(DriverEventCapabilityMask(0) == 0);
 }
 

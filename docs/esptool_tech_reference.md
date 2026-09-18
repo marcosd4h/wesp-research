@@ -28,7 +28,7 @@ sequenceDiagram
     Kernel->>BDD: Non-Recursive ROBDD Evaluation (Zero User-Mode Round Trips)
     alt Rule Action: Deny (Selector 5)
         BDD-->>Kernel: Match: Immediate Denial Disposition
-        Kernel-->>App: Abort Operation (STATUS_NOT_FOUND / E_FAIL)
+        Kernel-->>App: Abort Operation (STATUS_NOT_FOUND / ERROR_NOT_FOUND)
     else Rule Action: Queue-Backed Telemetry (Selector 1)
         BDD-->>Kernel: Match: Telemetry Capture
         Kernel->>Queue: Enqueue Event Envelope (Memory Quota Accounted)
@@ -51,7 +51,7 @@ Communication with `\EspFilterPort` is governed by multi-layered kernel security
 
 ## Token Security Attribute
 
-Callers in production must possess the `WESP://Permission` token security attribute. The platform accepts `restricted` (`10000000`) or `full` (`1000000000`). Setting this attribute requires `NT AUTHORITY\SYSTEM` and `SeTcbPrivilege`. The attribute is evaluated by `wesp.sys` during connection establishment.
+Callers in production must possess the `WESP://Permission` token security attribute. The platform accepts `restricted` (`1`) or `full` (`2`). The second DWORD of the attribute payload carries the permission value. Restricted-tier connections carrying `0x4D564900` in the connect-context discriminator DWORD are denied with `STATUS_ACCESS_DENIED`. Setting this attribute requires `NT AUTHORITY\SYSTEM` and `SeTcbPrivilege`. The attribute is evaluated by `wesp.sys` during connection establishment.
 
 ## Antimalware Protected Process Light Enforcement
 
@@ -157,7 +157,7 @@ The `status` command inspects and displays the operational environment of `espto
   elevated: yes
   tcb: enabled
   protection: 0x00 (None, None, audit=0)
-  attribute: present restricted (10000000)
+  attribute: present restricted (1)
   codeintegrity: options=0x00000002 testsigning=on ci=on
   secureboot: off
   ```
@@ -168,13 +168,13 @@ The `trust` command verifies whether the current execution context satisfies WES
 
 - Syntax: `esptool.exe trust`
 - Worker Hop: Yes (evaluates trust plan and hops if token mutation is required).
-- APIs Invoked: `EspRegisterClient`, `EspConnectClient`, `EspCreateEventQueue`, `EspCloseEventQueue`, `EspDisconnectClient`, `EspUnregisterClient`.
+- APIs Invoked: `EspRegisterClient`, `EspConnectClient`, `EspCreateEventQueue`, `EspDisconnectClient`, `EspUnregisterClient`.
 - Internal Execution Sequence:
   1. Displays trust diagnostics identical to `status`.
   2. Generates a unique client name and altitude using process tick and ID.
   3. Invokes `EspRegisterClient` and `EspConnectClient`.
-  4. Invokes `EspCreateEventQueue` and `EspCloseEventQueue`.
-  5. Tears down the test connection via `EspDisconnectClient` and `EspUnregisterClient`.
+  4. Invokes `EspCreateEventQueue`.
+  5. Tears down the test connection via `EspDisconnectClient` and `EspUnregisterClient` after the step report.
 - Output Anatomy:
   ```text
   account: SYSTEM
@@ -185,9 +185,6 @@ The `trust` command verifies whether the current execution context satisfies WES
   ok   EspRegisterClient                        0x00000000 S_OK
   ok   EspConnectClient                         0x00000000 S_OK
   ok   EspCreateEventQueue                      0x00000000 S_OK
-  ok   EspCloseEventQueue                       0x00000000 S_OK
-  ok   EspDisconnectClient                      0x00000000 S_OK
-  ok   EspUnregisterClient                      0x00000000 S_OK
   ```
 
 ## Session, Client, and Queue Lifecycle
@@ -315,6 +312,7 @@ The `persist-rules` command deploys rules with persistent lifetime (`RuleLifetim
 - Syntax: `esptool.exe persist-rules --rules <path.xml> [--fresh]`
 - Worker Hop: Yes.
 - Operational Constraint: Must not allocate a user-mode event queue. The driver persistent store rejects rules containing live user-mode queue pointers with `E_INVALIDARG`.
+- Persistence Scope: The notify/suppress action (selector 4) installs the rule in kernel memory with persistent lifetime but does not write it to the persisted registry subtree, so the rule survives a client disconnect but not a reboot. The registry write is gated by a per-rule condition in the driver writer path that the notify/suppress action does not satisfy.
 - Output Anatomy:
   ```text
   persist-rules 1
@@ -368,7 +366,7 @@ sequenceDiagram
     Client-->>Tool: Return EventObject View Handle
 
     Tool->>Client: EspGetEventObjectType(ViewHandle)
-    Client-->>Tool: Return Type Code (e.g., 2=Process, 3=FileObject, 8=RegistryKey)
+    Client-->>Tool: Return Type Code (e.g., 2=Process, 3=File, 8=RegistryKey; observed sparse codes: 1 thread, 2 process, 3 file, 5 file stream, 7 disk, 8 registry key, 10 desktop, 12 pipe, 14 token)
 
     Tool->>Client: EspGetEventObjectId(ViewHandle)
     Client-->>Tool: Return Unique 64-Bit Object Identifier
@@ -393,7 +391,7 @@ sequenceDiagram
 The `refs` command creates a kernel object reference for a specified executive object kind, unwraps its internal event object view, and queries requested properties.
 
 - Syntax: `esptool.exe refs <kind> [natural-key-options] [--properties <ids>] [--supported <id>] [--duplicate] [--context-set] [--context-enum] [--from-notify]`
-- Supported Kinds: `process`, `process-token`, `thread`, `thread-token`, `token`, `file`, `fileobject`, `stream`, `filestream`, `registry`, `volume`, `disk`, `desktop`, `pipe`, `mailslot`, `event`.
+- Supported Kinds: `process`, `process-token`, `thread`, `thread-token`, `token`, `file`, `fileobject`, `stream`, `filestream`, `registry`, `volume`, `disk`, `desktop`, `pipe`, `mailslot`, `event`. Pipe references accept the DOS spelling only (`\\.\pipe\...`); the NT device spelling (`\Device\NamedPipe\...`) is rejected with `0x8007007B`.
 - Key Options:
   - `--pid <id|self>`: Target process identifier. Passing `self` resolves the current process ID via `GetCurrentProcessId()`.
   - `--tid <id|self>`: Target thread identifier. Passing `self` resolves `GetCurrentThreadId()`.
@@ -414,7 +412,7 @@ The `refs` command creates a kernel object reference for a specified executive o
     - Calls `EspQueryProcessProperties` for IDs 6 (`ProcessId`), 20 (`ImagePath`), 1 (`CommandLine`), and 2 (`SessionId`).
   - File Reference (`refs file --path C:\Windows\System32\ntdll.dll --properties 1,9,28`):
     - Invokes `EspCreateFileReferenceByPath`. Win32 paths prefixed with `$nt:` undergo Win32-to-NT device path expansion via `ExpandFilterValue`; standard Win32 paths are passed directly as kind-1 path descriptors.
-    - Unwraps view (`3` for FileObject).
+    - Unwraps view (`3` for File).
     - Calls `EspQueryFileProperties` for IDs 1 (`FileName`), 9 (`VolumeName`), and 28 (`FileObjectType`).
   - Registry Reference (`refs registry --path HKLM\Software --properties 1,2`):
     - Invokes `EspCreateRegistryKeyReference`. User-mode `HKLM\...` paths are expanded by `espclient.dll` / driver (`Esp::EnsureNtRegistryPath`); pre-expanding in user space is avoided as it returns `ERROR_BAD_PATHNAME`.
@@ -759,13 +757,13 @@ The compatibility set covers event types that possess kernel enforcement capabil
 - `3000` through `3008` except `3007` (Filesystem operations): Blocked in minifilter callbacks.
 - `4000`, `4002` (Volume mount, Volume FSCTL): Blocked in volume interception callbacks.
 
-`FoCreate` (`2000`) is supported natively by the client library and does not require the patch. Events excluded from enforcement include `2004` (FoCleanup, post-operation only), `3007` (FS QueryOpen, lacks status modification), `5000` and `6000` (Named Pipe and Mailslot create, lack pre-operation blocking logic in current builds), `7000` through `7014` (Registry operations, lack callback disposition mapping), and `8000`/`8001` (Object Manager handle operations).
+`FoCreate` (`2000`) is supported natively by the client library and does not require the patch. Events excluded from enforcement include `2004` (FoCleanup, post-operation only), `3007` (FS QueryOpen, live capability `0x19` without status modification), `5000` and `6000` (Named Pipe and Mailslot create, lack pre-operation blocking logic in current builds), `7000` through `7014` (Registry operations, lack callback disposition mapping), `8000`/`8001` (Object Manager handle operations, live capability `0x19`), and `9000` (BootLoadDriver, live capability `0x07` without a disposition callback).
 
 ## Empirical Enforcement Outcomes
 
 Live validation testing on Windows 11 reference builds confirms functional enforcement:
 
-- **Process Creation Denial (`1000`)**: Deployed with `action="deny"`. Attempted execution of targeted binaries terminates immediately with HRESULT `0x80004005` (`E_FAIL`). User-mode code never executes.
+- **Process Creation Denial (`1000`)**: Deployed with `action="deny"`. Attempted execution of targeted binaries terminates with Win32 error `0x80070490` (`ERROR_NOT_FOUND`, disposition index 2). User-mode code never executes.
 - **File Creation Denial (`2000`)**: Deployed natively with `action="deny"`. File creation requests targeting specified paths fail with Win32 error `0x80070490` (`ERROR_NOT_FOUND`). The file is not created on disk.
 
 # Asynchronous Telemetry Engine and Event Queuing
@@ -890,7 +888,7 @@ This workflow installs an in-kernel blocking rule to deny the execution of a spe
    ```powershell
    Start-Process C:\tools\esptool-deny\proc_target.exe
    ```
-3. Process creation fails with `E_FAIL` (`0x80004005`). The kernel driver writes an error status to `PS_CREATE_NOTIFY_INFO.CreationStatus`, aborting initialization before user code executes.
+3. Process creation fails with `ERROR_NOT_FOUND` (`0x80070490`, disposition index 2). The kernel driver writes an error status to `PS_CREATE_NOTIFY_INFO.CreationStatus`, aborting initialization before user code executes.
 4. Attempting to execute any non-matching executable succeeds without interference.
 
 ### Live Object Reference and Property Extraction Workflow
@@ -958,7 +956,7 @@ The following table details diagnostic status codes, observed error conditions, 
 | `0x80070057` | `E_INVALIDARG`         | Caller presented `WESP://Permission` without AM-PPL protection under test signing, or submitted an unsupported selector.                                        | Run with `--no-provision` (or allow automatic test-signing detection), or clear stale token attributes via `esptool token clear`. |
 | `0x8007139F` | `ERROR_INVALID_STATE`  | Attempted to unregister a client identity that is currently connected to an active port handle.                                                                 | Disconnect the active session before attempting to unregister the client GUID.                                                    |
 | `0x80070490` | `ERROR_NOT_FOUND`      | Normal blocking status returned when a file create operation matches an active enforcing rule.                                                                  | Verify that the path matched the intended deny rule filter.                                                                       |
-| `0x80004005` | `E_FAIL`               | Process creation blocked by an enforcing WESP rule in kernel pre-notify callback.                                                                               | Verify that `PS_CREATE_NOTIFY_INFO.CreationStatus` was set to an error status as expected by the rule.                            |
+| `0x80070490` | `ERROR_NOT_FOUND`      | Process creation blocked by an enforcing WESP rule in kernel pre-notify callback (disposition index 2).                                                         | Verify that `PS_CREATE_NOTIFY_INFO.CreationStatus` was set to an error status as expected by the rule.                            |
 | `0x80070005` | `E_ACCESSDENIED`       | Caller attempted to set `WESP://Permission` without `SeTcbPrivilege` or administrative SYSTEM execution, or submitted BootLoadDriver `9000` in restricted mode. | Execute from an elevated shell under `NT AUTHORITY\SYSTEM`, or remove event `9000` from rule batches.                             |
 | `0x8007007E` | `ERROR_MOD_NOT_FOUND`  | `espclient.dll` could not be located in the system search path (`kModNotFound`).                                                                                | Supply the explicit DLL path using `--dll <path>`.                                                                                |
 | `0x800700B7` | `ERROR_ALREADY_EXISTS` | Client altitude collision during `EspRegisterClient`.                                                                                                           | `EspSession` executes an automated collision avoidance loop up to 32 attempts (+10 altitude per step).                            |

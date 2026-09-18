@@ -119,13 +119,13 @@ TEST_CASE("SupportsEnforcePayload covers FoCreate and the enforce-compat set") {
   // and 7003 cannot build an enforcing descriptor (E_INVALIDARG).
   CHECK_FALSE(SupportsEnforcePayload(kEventRegCreateKey));
   CHECK_FALSE(SupportsEnforcePayload(7003));
-  // Driver-impossible: 8000/8001 carry record 0x19 (bit 0x02 clear) and 3007's
-  // class has no filesystem disposition.
+  // Driver-impossible: 3007/8000/8001 carry live record 0x19 (bit 0x02 clear)
+  // and 3007's class has no filesystem disposition.
   CHECK_FALSE(SupportsEnforcePayload(kEventFsQueryOpen));
   CHECK_FALSE(SupportsEnforcePayload(kEventObCreateHandle));
   CHECK_FALSE(SupportsEnforcePayload(kEventObDuplicateHandle));
   // 5000/6000 have bit 0x02 set but the driver has no pre-operation DENY
-  // callback; 9000 has no capability record on this build.
+  // callback; 9000 carries live mask 0x07 yet has no DENY callback either.
   CHECK_FALSE(SupportsEnforcePayload(kEventPipeCreate));
   CHECK_FALSE(SupportsEnforcePayload(6000));
   CHECK_FALSE(SupportsEnforcePayload(9000));
